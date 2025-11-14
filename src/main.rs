@@ -2,18 +2,17 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
 
 #[tokio::main]
 async fn main() {
-    let app: Router<()> = Router::new()
+    let app = Router::new()
         .route("/", get(root))
         .route("/foo", get(get_foo).post(post_foo))
         .route("/foo/bar", get(foo_bar));
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
