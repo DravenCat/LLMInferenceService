@@ -129,3 +129,6 @@ Novelty: While several LLM serving solutions exist in Python, a Rust-native impl
 - - Testing, documentation, and deployment
 
 The project is designed to be completed within the timeframe by focusing on core functionality first and iteratively adding advanced features. The modular architecture allows for parallel development of different components, and the use of mature Rust crates (Candle for inference, Axum for web services) reduces implementation risk.
+
+smolLM-1.7B-Instruct
+smolLM2-1.7B-Instruct

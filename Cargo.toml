@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.6"
-burn = { version = "0.19.1", features = ["wgpu"] }
-tokio = { version = "1.47.1", features = ["full"] }
+axum = "0.8.7"
+tokio = {version = "1.48.0", features = ["full"]}
+serde_json = "1.0.145"
+serde = { version = "1.0.228", features = ["derive"] }
+walkdir = "2.5.0"
+regex = "1.12.2"
+burn = {version = "0.19.1", features = ["wgpu"]}
+burn-wgpu = "0.19.1"
+tower-http = {version = "0.6.6", features = ["cors", "trace", "compression-full"]}
+tracing-subscriber = "0.3.20"
