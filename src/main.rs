@@ -39,7 +39,9 @@ async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let state = Arc::new(ModelManager::new("model.safetensors", "tokenizer.json").await);
+    let state = AppState {
+        model_manager : Arc::new(Mutex::new(ModelManager::new("model.safetensors", "tokenizer.json").await))
+    };
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
