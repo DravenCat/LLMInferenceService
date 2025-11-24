@@ -18,10 +18,19 @@ use tower_http::{
 };
 use tracing_subscriber;
 use model::ModelManager;
-
+use crate::handler::routes;
 
 struct AppState {
     model_manager : Arc<Mutex<ModelManager>>,
+}
+
+
+impl Clone for AppState {
+    fn clone(&self) -> Self {
+        Self {
+            model_manager: Arc::clone(&self.model_manager),
+        }
+    }
 }
 
 
@@ -30,16 +39,19 @@ async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let state = AppState {
-        model_manager : Arc::new(Mutex::new(ModelManager::new("model.safetensors", "tokenizer.json").await))
-    };
+    let state = Arc::new(ModelManager::new("model.safetensors", "tokenizer.json").await);
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(vec![Method::GET, Method::POST])
         .allow_headers(Any);
 
-    let app = Router::new();
+    let app = Router::new()
+        .merge(routes())
+        .layer(CompressionLayer::new())
+        .layer(TraceLayer::new_for_http())
+        .layer(cors)
+        .with_state(state);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
