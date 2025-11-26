@@ -2,6 +2,7 @@ use burn;
 use std::sync::Arc;
 use burn_wgpu::{WgpuDevice};
 use tokio::sync::mpsc;
+use serde::{Deserialize, Serialize};
 use crate::tokenizer::Tokenizer;
 
 
@@ -45,6 +46,7 @@ pub struct ModelManager {
 
 
 // Not streaming
+#[derive(Serialize, Deserialize)]
 pub struct GenerationResult {
     pub text: String,
     pub tokens : Vec<u32>,
@@ -54,6 +56,7 @@ pub struct GenerationResult {
 
 
 // Streaming
+#[derive(Serialize, Deserialize)]
 pub struct StreamResult {
     pub token : u32,
     pub text: String,
@@ -80,19 +83,20 @@ impl ModelManager {
     }
 
 
-    // pub async fn generate(&self, prompt : &str) -> GenerationResult {
-    //     let start_time = std::time::Instant::now();
-    //
-    //
-    //
-    //     let inference_time = start_time.elapsed().as_secs_f64();
-    //
-    //     GenerationResult {
-    //
-    //
-    //         inference_time,
-    //     }
-    // }
+    pub async fn generate(&self, prompt : &str) -> GenerationResult {
+        let start_time = std::time::Instant::now();
+
+
+
+        let inference_time = start_time.elapsed().as_secs_f64();
+
+        GenerationResult {
+            text : String::from(prompt),
+            tokens : vec![1, 2, 3, 4, 5],
+            length : 0,
+            inference_time,
+        }
+    }
 
 
     pub async fn stream(&self, prompt : &str) -> mpsc::Receiver<StreamResult> {

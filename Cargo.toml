@@ -10,7 +10,8 @@ serde_json = "1.0.145"
 serde = { version = "1.0.228", features = ["derive"] }
 walkdir = "2.5.0"
 regex = "1.12.2"
-burn = {version = "0.19.1", features = ["wgpu"]}
+burn = { version = "0.19.1", features = ["wgpu"] }
 burn-wgpu = "0.19.1"
 tower-http = {version = "0.6.6", features = ["cors", "trace", "compression-full"]}
 tracing-subscriber = "0.3.20"
+tokio-stream = "0.1.17"

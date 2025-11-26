@@ -20,18 +20,13 @@ use tracing_subscriber;
 use model::ModelManager;
 use crate::handler::routes;
 
+
+#[derive(Clone)]
 struct AppState {
     model_manager : Arc<Mutex<ModelManager>>,
 }
 
 
-impl Clone for AppState {
-    fn clone(&self) -> Self {
-        Self {
-            model_manager: Arc::clone(&self.model_manager),
-        }
-    }
-}
 
 
 #[tokio::main]
