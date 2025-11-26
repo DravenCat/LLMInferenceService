@@ -6,7 +6,6 @@ mod tokenizer;
 use std::sync::Arc;
 use axum::{
     Router,
-    http::method
 };
 use axum::http::Method;
 use tokio::net::TcpListener;
