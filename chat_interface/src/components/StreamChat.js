@@ -34,7 +34,7 @@ const StreamingChat = () => {
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 
-      if (!response.ok) throw new Error("请求失败");
+      if (!response.ok) throw new Error("Request fail");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -72,10 +72,10 @@ const StreamingChat = () => {
         }
       }
     } catch (error) {
-      console.error("流式请求错误:", error);
+      console.error("Streaming request error:", error);
       setMessages((prev) => {
         const newMessages = [...prev];
-        newMessages[newMessages.length - 1].content = "抱歉，发生了错误，请重试。";
+        newMessages[newMessages.length - 1].content = "Sorry, there is an error in our server. Please try again later.";
         return newMessages;
       });
     } finally {
@@ -98,7 +98,7 @@ const StreamingChat = () => {
           <div className="w-7 h-7 rounded-full border-2 border-amber-200/60 flex items-center justify-center">
             <div className="w-3 h-3 rounded-full bg-amber-200/60" />
           </div>
-          <span className="text-lg font-medium tracking-wide">对话</span>
+          <span className="text-lg font-medium tracking-wide">Chat</span>
         </div>
       </header>
 
@@ -109,8 +109,8 @@ const StreamingChat = () => {
             <svg className="w-12 h-12 mb-4 text-stone-500" fill="none" viewBox="0 0 48 48" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinejoin="round" d="M24 4L28.5 15.5L40 20L28.5 24.5L24 36L19.5 24.5L8 20L19.5 15.5L24 4Z" />
             </svg>
-            <p className="text-xl mb-2">开始新对话</p>
-            <p className="text-sm text-stone-500">输入消息开始与AI助手交流</p>
+            <p className="text-xl mb-2">Start New Chat</p>
+            <p className="text-sm text-stone-500">Type in message to interact with our LLM</p>
           </div>
         ) : (
           <div className="max-w-3xl mx-auto space-y-5">
@@ -156,7 +156,7 @@ const StreamingChat = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入消息..."
+            placeholder="Typing message..."
             rows={1}
             disabled={isStreaming}
           />
