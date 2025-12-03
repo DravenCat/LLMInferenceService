@@ -7,6 +7,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
+use futures::stream::{Stream};
+use std::{convert::Infallible, time::Duration};
 use crate::AppState;
 
 
@@ -24,7 +26,7 @@ pub struct GenerateRequest {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GenerationResponse {
-    pub prompt: String,
+    content: String,
 }
 
 
@@ -51,24 +53,31 @@ pub async fn generate(State(state): State<AppState>, Json(request) : Json<Genera
         .await;
 
     Json(GenerationResponse {
-        prompt: result.text,
+        content: result.text,
     })
 }
 
 
 pub async fn streaming(State(state): State<AppState>, Json(request) : Json<GenerateRequest>)
     -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>> {
-    let model_manager = state.model_manager.lock().await;
+    let result = "This is the test content";
 
-    let receiver = model_manager.stream(&request.prompt).await;
+    let chars: Vec<String> = result.chars().map(|c| c.to_string()).collect();
 
-    let stream = ReceiverStream::new(receiver)
-        .map(|chunk| {
-            let data = serde_json::to_string(&chunk)
-                .map_err(|e| axum::Error::new(e))?;
-            Ok(Event::default().data(data))
-        });
+    let stream = tokio_stream::iter(chars.into_iter().map(|content| {
+        let response = GenerationResponse { content};
+        let json = serde_json::to_string(&response).unwrap();
+        Ok(Event::default().data(json))
+    }))
+        .then(|event| async move {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            event
+        })
+        .chain(tokio_stream::once(Ok(Event::default().data("[DONE]"))));
 
-    Sse::new(stream)
-    
+    Sse::new(stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(Duration::from_secs(15))
+            .text("keep-alive"),
+    )
 }

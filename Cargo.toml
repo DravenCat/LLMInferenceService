@@ -15,3 +15,5 @@ burn-wgpu = "0.19.1"
 tower-http = {version = "0.6.6", features = ["cors", "trace", "compression-full"]}
 tracing-subscriber = "0.3.20"
 tokio-stream = "0.1.17"
+futures = "0.3.31"
+async-stream = "0.3.6"

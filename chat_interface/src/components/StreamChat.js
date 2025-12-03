@@ -6,6 +6,7 @@ const StreamingChat = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -21,65 +22,77 @@ const StreamingChat = () => {
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     const userMessage = { role: "user", content: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage, { role: "assistant", content: "" }]);
     setInput("");
     setIsStreaming(true);
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
       const response = await fetch("http://localhost:8080/generate/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: userMessage.content }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Request fail");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
-            const data = line.slice(6);
+            const data = line.slice(6).trim();
             if (data === "[DONE]") continue;
 
             try {
               const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content || "";
+              const content = parsed.content || "";
               if (content) {
                 setMessages((prev) => {
                   const newMessages = [...prev];
-                  newMessages[newMessages.length - 1].content += content;
+                  newMessages[newMessages.length - 1] = {
+                    ...newMessages[newMessages.length - 1],
+                    content: newMessages[newMessages.length - 1].content + content,
+                  };
                   return newMessages;
                 });
               }
             } catch {
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1].content += data;
-                return newMessages;
-              });
+              // 非JSON格式，忽略
             }
           }
         }
       }
     } catch (error) {
+      if (error.name === "AbortError") return;
       console.error("Streaming request error:", error);
       setMessages((prev) => {
         const newMessages = [...prev];
-        newMessages[newMessages.length - 1].content = "Sorry, there is an error in our server. Please try again later.";
+        newMessages[newMessages.length - 1] = {
+          ...newMessages[newMessages.length - 1],
+          content: "Sorry, something wrong happen. Please try again",
+        };
         return newMessages;
       });
     } finally {
       setIsStreaming(false);
+      abortControllerRef.current = null;
     }
   };
 
