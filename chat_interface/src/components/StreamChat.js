@@ -28,10 +28,10 @@ const StreamingChat = () => {
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("http://localhost:8080/generate/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
+        body: JSON.stringify({ prompt: userMessage.content }),
       });
 
       if (!response.ok) throw new Error("Request fail");
@@ -181,7 +181,7 @@ const StreamingChat = () => {
           </button>
         </div>
         <p className="text-center text-xs text-stone-600 mt-3 max-w-3xl mx-auto">
-          按 Enter 发送，Shift + Enter 换行
+          Press Enter to send，Shift + Enter to change line
         </p>
       </footer>
     </div>
