@@ -1,12 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
+import ModelSelector  from "./ModelSelector";
+
 
 const StreamingChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [model, setModel] = useState("model_1");
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const abortControllerRef = useRef(null);
+
+  const models = [
+    { id: "model_1", name: "Model 1" },
+    { id: "model_2", name: "Model 2" },
+    { id: "model_3", name: "Model 3" },
+  ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,7 +46,7 @@ const StreamingChat = () => {
       const response = await fetch("http://localhost:8080/generate/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMessage.content }),
+        body: JSON.stringify({ prompt: userMessage.content, model }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -173,25 +182,33 @@ const StreamingChat = () => {
             rows={1}
             disabled={isStreaming}
           />
-          <button
-            className={`w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-stone-900 flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 ${
-              isStreaming || !input.trim() ? "opacity-40 cursor-not-allowed hover:scale-100" : ""
-            }`}
-            onClick={handleSubmit}
-            disabled={isStreaming || !input.trim()}
-          >
-            {isStreaming ? (
-              <div className="flex gap-0.5">
-                {[0, 1, 2].map((i) => (
-                  <span key={i} className="w-1.5 h-1.5 bg-stone-900 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
-                ))}
-              </div>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 10H17M17 10L12 5M17 10L12 15" />
-              </svg>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <ModelSelector
+              model={model}
+              setModel={setModel}
+              models={models}
+              disabled={isStreaming}
+            />
+            <button
+              className={`w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-stone-900 flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 ${
+                isStreaming || !input.trim() ? "opacity-40 cursor-not-allowed hover:scale-100" : ""
+              }`}
+              onClick={handleSubmit}
+              disabled={isStreaming || !input.trim()}
+            >
+              {isStreaming ? (
+                <div className="flex gap-0.5">
+                  {[0, 1, 2].map((i) => (
+                    <span key={i} className="w-1 h-1 bg-stone-900 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+                  ))}
+                </div>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 10H17M17 10L12 5M17 10L12 15" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
         <p className="text-center text-xs text-stone-600 mt-3 max-w-3xl mx-auto">
           Press Enter to send，Shift + Enter to change line

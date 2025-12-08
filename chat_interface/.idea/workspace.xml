@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="67907313-6e5c-4029-9161-80e22366d5cd" name="更改" comment="Stream chat" />
+    <list default="true" id="67907313-6e5c-4029-9161-80e22366d5cd" name="更改" comment="Stream chat">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/StreamChat.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StreamChat.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -60,7 +63,8 @@
       <updated>1764666735599</updated>
       <workItem from="1764666737924" duration="5968000" />
       <workItem from="1764792152648" duration="1539000" />
-      <workItem from="1764794866741" duration="875000" />
+      <workItem from="1764794866741" duration="1492000" />
+      <workItem from="1765155215765" duration="1355000" />
     </task>
     <task id="LOCAL-00001" summary="React Interface">
       <option name="closed" value="true" />
