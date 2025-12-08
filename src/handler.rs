@@ -6,9 +6,8 @@ use axum::{
     response::{sse::Event, Sse},
 };
 use serde::{Deserialize, Serialize};
-use tokio_stream::{wrappers::ReceiverStream, StreamExt};
-use futures::stream::{Stream};
-use std::{convert::Infallible, time::Duration};
+use tokio_stream::{StreamExt};
+use std::{time::Duration};
 use crate::AppState;
 
 
@@ -22,6 +21,7 @@ pub struct HealthResponse {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GenerateRequest {
     pub prompt: String,
+    pub model_name: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -61,10 +61,11 @@ pub async fn generate(State(state): State<AppState>, Json(request) : Json<Genera
 pub async fn streaming(State(state): State<AppState>, Json(request) : Json<GenerateRequest>)
     -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>> {
     let _model_manager = state.model_manager.lock().await;
+    let model_name = request.model_name.clone();
 
     // get actual content from the model manager
     // let result = model_manager.stream(&request.prompt).await;
-    let result = "This is the test content";
+    let result = format!("You are using {model_name}. This is the test message");
     let chars: Vec<String> = result.chars().map(|c| c.to_string()).collect();
 
     let stream = tokio_stream::iter(chars.into_iter().map(|content| {
