@@ -10,31 +10,13 @@ use tokio_stream::{StreamExt};
 use std::{time::Duration};
 use crate::AppState;
 
+use crate::types::{InferenceRequest, InferenceResponse};
+use crate::mistral_runner::{run_inference_collect, run_inference_stream};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthResponse {
     pub is_healthy: bool,
     pub status: String,
-}
-
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct GenerateRequest {
-    pub prompt: String,
-    pub model_name: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct GenerationResponse {
-    content: String,
-}
-
-
-pub fn routes() -> Router<AppState> {
-    Router::new()
-        .route("/health", get(healthy))
-        .route("/generate", post(generate))
-        .route("/generate/stream", post(streaming))
 }
 
 
@@ -45,43 +27,64 @@ pub async fn healthy(State(_state): State<AppState>) -> Json<HealthResponse>{
     })
 }
 
+//modified to join the inferrence part
+pub async fn infer_handler(
+    Json(req): Json<InferenceRequest>,
+) -> Json<InferenceResponse> {
+    let text = run_inference_collect(req.model.as_str(), req.prompt.as_str())
+        .await
+        .unwrap_or_else(|_| "Inference failed".to_string());
 
-pub async fn generate(State(state): State<AppState>, Json(request) : Json<GenerateRequest>) -> Json<GenerationResponse> {
-    let model_manager = state.model_manager.lock().await;
-    let result = model_manager
-        .generate(&request.prompt)
-        .await;
-
-    Json(GenerationResponse {
-        content: result.text,
-    })
+    Json(InferenceResponse { text })
 }
 
+pub async fn infer_stream_handler(
+    Json(req): Json<InferenceRequest>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>
+{
+    print!("infer_stream_handler entered!");
+    let (tx, rx) = tokio::sync::mpsc::channel::<String>(32);
 
-pub async fn streaming(State(state): State<AppState>, Json(request) : Json<GenerateRequest>)
-    -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>> {
-    let _model_manager = state.model_manager.lock().await;
-    let model_name = request.model_name.clone();
+    let model = req.model;
+    let prompt = req.prompt;
 
-    // get actual content from the model manager
-    // let result = model_manager.stream(&request.prompt).await;
-    let result = format!("You are using {model_name}. This is the test message");
-    let chars: Vec<String> = result.chars().map(|c| c.to_string()).collect();
+    tokio::spawn(async move {
+        if let Ok(mut stream) = run_inference_stream(model.as_str(), prompt.as_str()).await {
+            while let Some(token) = stream.next().await {
+                if tx.send(token).await.is_err() {
+                    break;
+                }
+            }
+        }
+        let _ = tx.send("[DONE]".to_string()).await;
+    });
 
-    let stream = tokio_stream::iter(chars.into_iter().map(|content| {
-        let response = GenerationResponse { content};
-        let json = serde_json::to_string(&response).unwrap();
-        Ok(Event::default().data(json))
-    }))
-        .then(|event| async move {
-            tokio::time::sleep(Duration::from_millis(50)).await;
-            event
+    let sse_stream = tokio_stream::wrappers::ReceiverStream::new(rx)
+        .map(|token| {
+            if token == "[DONE]" {
+                return Ok(Event::default().data("[DONE]"));
+            }
+
+            let json = serde_json::json!({
+            "content": token
         })
-        .chain(tokio_stream::once(Ok(Event::default().data("[DONE]"))));
+                .to_string();
 
-    Sse::new(stream).keep_alive(
+            Ok(Event::default().data(json))
+        });
+
+    println!("1111");
+
+    Sse::new(sse_stream).keep_alive(
         axum::response::sse::KeepAlive::new()
-            .interval(Duration::from_secs(15))
+            .interval(Duration::from_secs(10))
             .text("keep-alive"),
     )
+
+}
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/generate", post(infer_handler))
+        .route("/generate/stream", post(infer_stream_handler))
+        .route("/health", get(healthy))
 }

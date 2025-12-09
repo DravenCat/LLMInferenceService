@@ -1,7 +1,8 @@
 mod handler;
-mod model;
 mod error;
-mod tokenizer;
+mod types;
+mod mistral_runner;
+
 
 use std::sync::Arc;
 use axum::{
@@ -16,26 +17,18 @@ use tower_http::{
     compression::CompressionLayer,
 };
 use tracing_subscriber;
-use model::ModelManager;
 use crate::handler::routes;
 
 
 #[derive(Clone)]
-struct AppState {
-    model_manager : Arc<Mutex<ModelManager>>,
-}
-
-
-
+pub struct AppState;
 
 #[tokio::main]
 async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let state = AppState {
-        model_manager : Arc::new(Mutex::new(ModelManager::new("model.safetensors", "tokenizer.json").await))
-    };
+    let state = AppState;
 
     let cors = CorsLayer::new()
         .allow_origin(Any)

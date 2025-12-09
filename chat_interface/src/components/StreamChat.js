@@ -6,15 +6,15 @@ const StreamingChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [model, setModel] = useState("model_1");
+  const [model, setModel] = useState("qwen");
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const abortControllerRef = useRef(null);
 
   const models = [
-    { id: "model_1", name: "Model 1" },
-    { id: "model_2", name: "Model 2" },
-    { id: "model_3", name: "Model 3" },
+    { id: "qwen", name: "QWEN" },
+    { id: "smollm2", name: "SmolLM2 1.7B" },
+    { id: "llama8b", name: "LLaMA 8B" },
   ];
 
   useEffect(() => {
