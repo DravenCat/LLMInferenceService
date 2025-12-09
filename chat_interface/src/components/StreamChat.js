@@ -65,26 +65,38 @@ const StreamingChat = () => {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
 
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.content || "";
-              if (content) {
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  newMessages[newMessages.length - 1] = {
-                    ...newMessages[newMessages.length - 1],
-                    content: newMessages[newMessages.length - 1].content + content,
-                  };
-                  return newMessages;
-                });
-              }
-            } catch {
-              // 非JSON格式，忽略
+          // 处理 SSE 格式 (data: {...}) 或纯 JSON 格式
+          let jsonStr = trimmedLine;
+          if (trimmedLine.startsWith("data: ")) {
+            jsonStr = trimmedLine.slice(6).trim();
+            if (jsonStr === "[DONE]") continue;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+
+            // 使用 token 字段获取增量内容
+            const token = parsed.token || "";
+            if (token) {
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  content: newMessages[newMessages.length - 1].content + token,
+                };
+                return newMessages;
+              });
             }
+
+            // 检查是否完成
+            if (parsed.is_finished) {
+              break;
+            }
+          } catch {
+            // 非JSON格式，忽略
           }
         }
       }
