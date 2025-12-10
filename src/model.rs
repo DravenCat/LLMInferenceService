@@ -191,12 +191,10 @@ fn temperature_scaled_softmax<Backend: burn::tensor::backend::Backend>(
 
 impl ModelManager {
     pub async fn new() -> AppResult<Self> {
-        info!("Initializing ModelManager with multi-model support...");
-        
+
         let device = WgpuDevice::default();
         info!("Using device: {:?}", device);
-        info!("Available models: {:?}", ModelName::available_models());
-        
+
         // 默认加载最小的模型
         let default_model = ModelName::Llama32_1B;
         info!("Loading default model: {}...", default_model);
@@ -211,7 +209,7 @@ impl ModelManager {
         .map_err(|e| AppError::ModelNotLoaded(format!("Task panic: {}", e)))?
         .map_err(|e| AppError::ModelNotLoaded(format!("Model error: {}", e)))?;
 
-        info!("✅ {} loaded successfully!", default_model);
+        info!("{} loaded successfully!", default_model);
 
         Ok(Self {
             current_model: Some(Arc::new(StdMutex::new(llama))),
@@ -232,7 +230,7 @@ impl ModelManager {
         }
         
         info!("Switching model from {} to {}...", self.current_model_name, model_name);
-        info!("⚠️  This will unload the current model and load the new one.");
+        info!("This will unload the current model and load the new one.");
         info!("First load may take several minutes to download weights.");
         
         // 释放当前模型
@@ -258,7 +256,7 @@ impl ModelManager {
         self.current_model = Some(Arc::new(StdMutex::new(llama)));
         self.current_model_name = model_name;
         
-        info!("✅ Model switched to {}", model_name);
+        info!("Model switched to {}", model_name);
         Ok(())
     }
 
