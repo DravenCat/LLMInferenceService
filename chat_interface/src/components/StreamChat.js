@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import ModelSelector from "./ModelSelector";
 
 const StreamingChat = () => {
@@ -27,6 +27,21 @@ const StreamingChat = () => {
     }
   }, [input]);
 
+  // 更新最后一条消息的内容
+  const appendToLastMessage = useCallback((token) => {
+    setMessages((prev) => {
+      const newMessages = [...prev];
+      const lastIndex = newMessages.length - 1;
+      if (lastIndex >= 0 && newMessages[lastIndex].role === "assistant") {
+        newMessages[lastIndex] = {
+          ...newMessages[lastIndex],
+          content: newMessages[lastIndex].content + token,
+        };
+      }
+      return newMessages;
+    });
+  }, []);
+
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -44,14 +59,18 @@ const StreamingChat = () => {
     try {
       const response = await fetch("http://localhost:8080/generate/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream",
+          "Cache-Control": "no-cache",
+        },
         body: JSON.stringify({
           prompt: userMessage.content,
-          model: model,  // 后端使用 "model" 字段
+          model: model,
           max_tokens: 512,
           temperature: 0.7,
           top_p: 0.9,
-          use_chat_template: true,  // 使用聊天模板，让模型回答问题而非补全
+          use_chat_template: true,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -62,56 +81,52 @@ const StreamingChat = () => {
       }
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder("utf-8");
+
+      // 实时处理每个字节，不等待完整行
       let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
+
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+        // 立即解码接收到的数据
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
 
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) continue;
+        // 按行处理 SSE 数据
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim();
+          buffer = buffer.slice(newlineIndex + 1);
 
-          // 处理 SSE 格式 (data: {...})
-          let jsonStr = trimmedLine;
-          if (trimmedLine.startsWith("data:")) {
-            jsonStr = trimmedLine.slice(5).trim();
-            if (jsonStr === "[DONE]" || jsonStr === "keep-alive") continue;
-          }
+          if (!line) continue;
 
-          // 跳过非 JSON 内容
-          if (!jsonStr.startsWith("{")) continue;
+          // SSE 格式: "data: {json}"
+          if (line.startsWith("data:")) {
+            const dataContent = line.slice(5).trim();
 
-          try {
-            const parsed = JSON.parse(jsonStr);
-
-            // 后端返回格式:
-            // { token: "xxx", generated_text: "...", is_finished: bool, finish_reason: "stop"|null }
-            const token = parsed.token || "";
-            if (token) {
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMsg = newMessages[newMessages.length - 1];
-                newMessages[newMessages.length - 1] = {
-                  ...lastMsg,
-                  content: lastMsg.content + token,
-                };
-                return newMessages;
-              });
+            // 跳过心跳和空数据
+            if (!dataContent || dataContent === "[DONE]" || dataContent === "keep-alive") {
+              continue;
             }
 
-            // 检查是否完成
-            if (parsed.is_finished) {
-              break;
+            try {
+              const parsed = JSON.parse(dataContent);
+              const token = parsed.token;
+
+              if (token) {
+                // 立即更新 UI
+                appendToLastMessage(token);
+              }
+
+              if (parsed.is_finished) {
+                break;
+              }
+            } catch (e) {
+              // 忽略解析错误
             }
-          } catch (e) {
-            // 非JSON格式，忽略
-            console.debug("Skip non-JSON line:", jsonStr);
           }
         }
       }
@@ -120,10 +135,12 @@ const StreamingChat = () => {
       console.error("Streaming request error:", error);
       setMessages((prev) => {
         const newMessages = [...prev];
-        if (newMessages.length > 0) {
-          newMessages[newMessages.length - 1] = {
-            ...newMessages[newMessages.length - 1],
-            content: `Error: ${error.message || "Something went wrong. Please try again."}`,
+        const lastIndex = newMessages.length - 1;
+        if (lastIndex >= 0 && newMessages[lastIndex].role === "assistant") {
+          const currentContent = newMessages[lastIndex].content;
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            content: currentContent || `Error: ${error.message}`,
           };
         }
         return newMessages;
@@ -156,7 +173,7 @@ const StreamingChat = () => {
               <div className="w-7 h-7 rounded-full border-2 border-amber-200/60 flex items-center justify-center">
                 <div className="w-3 h-3 rounded-full bg-amber-200/60" />
               </div>
-              <span className="text-lg font-medium tracking-wide">AI Chat</span>
+              <span className="text-lg font-medium tracking-wide">Llama Chat</span>
             </div>
             {messages.length > 0 && (
                 <button
@@ -204,8 +221,8 @@ const StreamingChat = () => {
                               <div className="w-1.5 h-1.5 rounded-full bg-amber-400/70" />
                             </div>
                         )}
-                        <div className="whitespace-pre-wrap break-words">
-                          {msg.content || (msg.role === "assistant" && isStreaming && idx === messages.length - 1 ? "" : "")}
+                        <div className="whitespace-pre-wrap break-words min-h-[1.5em] text-left">
+                          {msg.content}
                           {msg.role === "assistant" && isStreaming && idx === messages.length - 1 && (
                               <span className="inline-block ml-0.5 text-amber-400 animate-pulse">▊</span>
                           )}
