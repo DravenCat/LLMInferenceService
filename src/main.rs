@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
 
     info!("🚀 Starting LLM Inference Service...");
     info!("Multi-model support enabled");
-    info!("Available models: Llama-3.1-8B, Llama-3.2-1B, Llama-3.2-3B");
+    info!("Available models: Llama-3.2-1B, Llama-3.2-3B");
 
     // 初始化模型管理器
     let model_manager = ModelManager::new().await?;
@@ -69,15 +69,7 @@ async fn main() -> anyhow::Result<()> {
     info!("");
     info!("📖 Available endpoints:");
     info!("   GET  /health              - Health check & current model");
-    info!("   GET  /models              - List all available models");
-    info!("   POST /models/switch       - Switch to a different model");
-    info!("   POST /generate            - Text generation");
     info!("   POST /generate/stream     - Text generation (streaming)");
-    info!("   POST /chat                - Chat completion");
-    info!("   POST /chat/stream         - Chat completion (streaming)");
-    info!("   GET  /v1/models           - OpenAI-compatible model list");
-    info!("   POST /v1/completions      - OpenAI-compatible completions");
-    info!("   POST /v1/chat/completions - OpenAI-compatible chat");
     info!("");
 
     let listener = TcpListener::bind(addr).await?;
