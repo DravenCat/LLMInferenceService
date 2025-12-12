@@ -12,7 +12,6 @@ const FileUpload = forwardRef(({
 
   const allowedExtensions = [".txt", ".pdf", ".docx", ".pptx"];
 
-  // 暴露 trigger 方法给父组件
   useImperativeHandle(ref, () => ({
     trigger: () => fileInputRef.current?.click()
   }));
@@ -30,7 +29,7 @@ const FileUpload = forwardRef(({
 
     const ext = "." + file.name.split(".").pop().toLowerCase();
     if (!allowedExtensions.includes(ext)) {
-      setError(`不支持的文件类型，支持: ${allowedExtensions.join(", ")}`);
+      setError(`Unsupported file type. Please upload: ${allowedExtensions.join(", ")}`);
       return;
     }
 
@@ -48,7 +47,7 @@ const FileUpload = forwardRef(({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "上传失败");
+        throw new Error(errorData.error || "Fail to upoad");
       }
 
       const data = await response.json();
@@ -71,7 +70,7 @@ const FileUpload = forwardRef(({
         method: "DELETE",
       });
     } catch (err) {
-      console.error("删除文件失败:", err);
+      console.error("Fail to delete file:", err);
     }
 
     onRemove?.();
@@ -88,12 +87,10 @@ const FileUpload = forwardRef(({
     return iconMap[ext] || "📎";
   };
 
-  // 是否显示状态区域
   const showStatus = attachedFile || uploading || error;
 
   return (
       <>
-        {/* 隐藏的文件输入 */}
         <input
             ref={fileInputRef}
             type="file"
@@ -103,10 +100,8 @@ const FileUpload = forwardRef(({
             className="hidden"
         />
 
-        {/* 状态显示区域 */}
         {showStatus && (
             <div className="px-3 pt-3">
-              {/* 已附加的文件 */}
               {attachedFile && (
                   <div className="inline-flex items-center gap-2 px-3 py-2 bg-stone-700/50 rounded-lg text-sm">
                     <span>{getFileIcon(attachedFile.filename)}</span>
@@ -117,7 +112,7 @@ const FileUpload = forwardRef(({
                         onClick={handleRemove}
                         disabled={disabled}
                         className="ml-1 p-1 hover:bg-stone-600/50 rounded transition-colors text-stone-400 hover:text-stone-200"
-                        title="移除文件"
+                        title="Remove file"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -126,15 +121,13 @@ const FileUpload = forwardRef(({
                   </div>
               )}
 
-              {/* 上传中 */}
               {uploading && (
                   <div className="inline-flex items-center gap-2 px-3 py-2 bg-stone-700/50 rounded-lg text-sm text-stone-400">
                     <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                    <span>上传中...</span>
+                    <span>Uploading...</span>
                   </div>
               )}
 
-              {/* 错误 */}
               {error && (
                   <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-900/30 border border-red-700/50 rounded-lg text-sm text-red-300">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
