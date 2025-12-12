@@ -4,13 +4,11 @@ mod types;
 mod mistral_runner;
 
 
-use std::sync::Arc;
 use axum::{
     Router,
 };
 use axum::http::Method;
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,

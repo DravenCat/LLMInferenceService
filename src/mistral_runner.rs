@@ -58,7 +58,7 @@ pub async fn run_inference_collect(model_name: &str, prompt: &str) -> Result<Str
     //models available: - GGUF
     let models = [
         ("qwen", ("bartowski/Qwen2.5-3B-Instruct-GGUF", "Qwen2.5-3B-Instruct-Q4_K_M.gguf")),
-        ("smollm2", ("bartowski/SmolLM2-1.7B-Instruct-GGUF", "smollm2-1.7b-instruct-q4_k_m.gguf")),
+        ("smollm2", ("bartowski/SmolLM2-1.7B-Instruct-GGUF", "SmolLM2-1.7B-Instruct-Q4_K_M.gguf")),
         ("llama8b", ("bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf")),
     ];
 
@@ -106,7 +106,7 @@ pub async fn run_inference_stream(
     //download model
     let models = [
         ("qwen", ("bartowski/Qwen2.5-3B-Instruct-GGUF", "Qwen2.5-3B-Instruct-Q4_K_M.gguf")),
-        ("smollm2", ("bartowski/SmolLM2-1.7B-Instruct-GGUF", "smollm2-1.7b-instruct-q4_k_m.gguf")),
+        ("smollm2", ("bartowski/SmolLM2-1.7B-Instruct-GGUF", "SmolLM2-1.7B-Instruct-Q4_K_M.gguf")),
         ("llama8b", ("bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf")),
     ];
 
