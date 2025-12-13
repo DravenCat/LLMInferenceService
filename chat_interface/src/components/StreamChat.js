@@ -7,7 +7,7 @@ const StreamingChat = () => {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [model, setModel] = useState("qwen");
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedFiles, setAttachedFiles] = useState([]);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -31,12 +31,14 @@ const StreamingChat = () => {
     }
   }, [input]);
 
+  // 添加文件到列表
   const handleFileUploaded = (fileData) => {
-    setAttachedFile(fileData);
+    setAttachedFiles((prev) => [...prev, fileData]);
   };
 
-  const handleRemoveFile = () => {
-    setAttachedFile(null);
+  // 从列表中移除文件
+  const handleFileRemoved = (fileId) => {
+    setAttachedFiles((prev) => prev.filter((f) => f.file_id !== fileId));
   };
 
   const handlePlusClick = () => {
@@ -51,18 +53,21 @@ const StreamingChat = () => {
     }
     abortControllerRef.current = new AbortController();
 
-    const userMessageContent = attachedFile
-        ? `📎 ${attachedFile.filename}\n\n${input.trim()}`
-        : input.trim();
+    // 构建用户消息显示（显示所有附加的文件）
+    let userMessageContent = input.trim();
+    if (attachedFiles.length > 0) {
+      const fileNames = attachedFiles.map((f) => `📎 ${f.filename}`).join("\n");
+      userMessageContent = `${fileNames}\n\n${input.trim()}`;
+    }
 
     const userMessage = { role: "user", content: userMessageContent };
     setMessages((prev) => [...prev, userMessage, { role: "assistant", content: "" }]);
 
     const currentPrompt = input.trim();
-    const currentFileId = attachedFile?.file_id;
+    const currentFileIds = attachedFiles.map((f) => f.file_id);
 
     setInput("");
-    setAttachedFile(null);
+    setAttachedFiles([]);
     setIsStreaming(true);
 
     try {
@@ -71,8 +76,9 @@ const StreamingChat = () => {
         model_name: model,
       };
 
-      if (currentFileId) {
-        requestBody.file_id = currentFileId;
+      // 支持多个文件 ID
+      if (currentFileIds.length > 0) {
+        requestBody.file_ids = currentFileIds;
       }
 
       const response = await fetch("http://localhost:8080/generate/stream", {
@@ -206,13 +212,13 @@ const StreamingChat = () => {
           <div className="max-w-3xl mx-auto">
             <div className="bg-stone-800/40 border border-stone-700/50 rounded-2xl focus-within:border-amber-600/50 focus-within:ring-1 focus-within:ring-amber-600/20 transition-all">
 
-              {/* FileUpload 组件 - 只渲染状态区域和隐藏的 input */}
+              {/* FileUpload 组件 - 显示所有已上传文件 */}
               <FileUpload
                   ref={fileUploadRef}
                   onFileUploaded={handleFileUploaded}
+                  onFileRemoved={handleFileRemoved}
                   disabled={isStreaming}
-                  attachedFile={attachedFile}
-                  onRemove={handleRemoveFile}
+                  attachedFiles={attachedFiles}
               />
 
               <div className="flex items-end gap-1 p-2">

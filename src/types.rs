@@ -17,5 +17,5 @@ pub struct InferenceResponse {
 pub struct UploadResponse {
     pub file_id: String,
     pub filename: String,
-    pub size: usize,
+    pub file_size: usize,
 }

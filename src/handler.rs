@@ -8,8 +8,9 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tokio_stream::{StreamExt};
 use std::{time::Duration};
+use std::path::Path;
 use crate::AppState;
-
+use crate::file_parser::{parse_file, CacheFile};
 use crate::types::{InferenceRequest, InferenceResponse, UploadResponse};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
 
@@ -84,9 +85,32 @@ pub async fn infer_stream_handler(
 }
 
 
-// pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multipart) -> Json<UploadResponse> {
-//
-// }
+pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multipart) -> Json<UploadResponse> {
+    let item = multipart.next_field().await.unwrap().unwrap();
+    let filename = item.file_name().map(|s| s.to_string()).unwrap_or_else(|| "".to_string());
+
+    let data = item.bytes().await.unwrap();
+    let file_size = data.len();
+
+    let content = parse_file(Path::new(&filename), &data).await.unwrap();
+    let file_id = uuid::Uuid::new_v4().to_string();
+    {
+        println!("file_id: {}, file_content: {}", file_id, content);
+    }
+    let cache_file = CacheFile {
+        filename: filename.clone(),
+        content,
+    };
+    {
+        let mut cache = state.file_cache.write().await;
+        cache.insert(file_id.clone(), cache_file);
+    }
+    Json(UploadResponse {
+        file_id,
+        filename,
+        file_size
+    })
+}
 
 
 pub async fn remove_handler() {}
@@ -97,5 +121,5 @@ pub fn routes() -> Router<AppState> {
         .route("/generate", post(infer_handler))
         .route("/generate/stream", post(infer_stream_handler))
         .route("/health", get(healthy))
-        // .route("/upload", post(infer_handler))
+        .route("/upload", post(upload_handler))
 }
