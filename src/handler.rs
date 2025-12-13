@@ -41,6 +41,7 @@ pub async fn infer_handler(
 }
 
 pub async fn infer_stream_handler(
+    State(state): State<AppState>,
     Json(req): Json<InferenceRequest>,
 ) -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>
 {
@@ -48,7 +49,7 @@ pub async fn infer_stream_handler(
     let (tx, rx) = tokio::sync::mpsc::channel::<String>(32);
 
     let model = req.model;
-    let prompt = req.prompt;
+    let prompt = build_prompt(&state, &req.prompt).await;
 
     tokio::spawn(async move {
         if let Ok(mut stream) = run_inference_stream(model.as_str(), prompt.as_str()).await {
@@ -83,6 +84,25 @@ pub async fn infer_stream_handler(
             .text("keep-alive"),
     )
 
+}
+
+
+async fn build_prompt(state: &AppState, prompt: &String) -> String {
+    let mut cache = state.file_cache.write().await;
+    let mut final_prompt = String::new();
+    for (_, value) in cache.iter() {
+        final_prompt.push_str(
+            format!("Content in {} : {}\n", value.filename, value.content)
+                .as_str());
+    }
+    cache.clear();
+
+    final_prompt.push_str(
+        format!("User's prompt: {}\n", prompt)
+            .as_str()
+    );
+
+    final_prompt
 }
 
 

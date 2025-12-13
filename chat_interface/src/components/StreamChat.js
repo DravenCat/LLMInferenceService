@@ -45,6 +45,41 @@ const StreamingChat = () => {
     fileUploadRef.current?.trigger();
   };
 
+  // 格式化文件大小
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const units = ["B", "KB", "MB", "GB"];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    return `${size.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
+  };
+
+  // 获取文件类型显示名称
+  const getFileTypeName = (filename) => {
+    const ext = filename?.split(".").pop().toLowerCase();
+    const typeMap = {
+      pdf: "PDF",
+      docx: "Word Document",
+      txt: "Text File",
+    };
+    return typeMap[ext] || ext?.toUpperCase() || "File";
+  };
+
+  // 获取文件图标颜色
+  const getFileIconColor = (filename) => {
+    const ext = filename?.split(".").pop().toLowerCase();
+    const iconColors = {
+      pdf: "text-red-400",
+      docx: "text-blue-400",
+      txt: "text-stone-400",
+    };
+    return iconColors[ext] || "text-stone-400";
+  };
+
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -53,14 +88,12 @@ const StreamingChat = () => {
     }
     abortControllerRef.current = new AbortController();
 
-    // 构建用户消息显示（显示所有附加的文件）
-    let userMessageContent = input.trim();
-    if (attachedFiles.length > 0) {
-      const fileNames = attachedFiles.map((f) => `📎 ${f.filename}`).join("\n");
-      userMessageContent = `${fileNames}\n\n${input.trim()}`;
-    }
-
-    const userMessage = { role: "user", content: userMessageContent };
+    // 构建用户消息，包含文件信息
+    const userMessage = {
+      role: "user",
+      content: input.trim(),
+      files: attachedFiles.length > 0 ? [...attachedFiles] : null
+    };
     setMessages((prev) => [...prev, userMessage, { role: "assistant", content: "" }]);
 
     const currentPrompt = input.trim();
@@ -150,6 +183,31 @@ const StreamingChat = () => {
     }
   };
 
+  // 渲染文件卡片（用于消息中显示）
+  const renderFileCard = (file) => (
+      <div
+          key={file.file_id}
+          className="inline-flex items-center gap-2.5 px-3 py-2 bg-stone-800/80 border border-stone-600/50 rounded-xl"
+      >
+        {/* 文件图标 */}
+        <div className={`w-9 h-9 rounded-lg bg-stone-700/80 flex items-center justify-center ${getFileIconColor(file.filename)}`}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+        </div>
+
+        {/* 文件信息 */}
+        <div className="flex flex-col items-start">
+        <span className="text-sm text-stone-200 font-medium truncate max-w-[160px]">
+          {file.filename}
+        </span>
+          <span className="text-xs text-stone-500">
+          {getFileTypeName(file.filename)} · {formatFileSize(file.filesize)}
+        </span>
+        </div>
+      </div>
+  );
+
   return (
       <div className="flex flex-col h-screen w-full bg-gradient-to-b from-stone-900 to-stone-950 text-stone-200">
         {/* Header */}
@@ -181,25 +239,36 @@ const StreamingChat = () => {
                             msg.role === "user" ? "justify-end" : "justify-start"
                         }`}
                     >
-                      <div
-                          className={`max-w-[85%] px-4 py-3 rounded-2xl leading-relaxed ${
-                              msg.role === "user"
-                                  ? "bg-gradient-to-br from-amber-600 to-amber-700 text-stone-900 rounded-br-sm shadow-lg shadow-amber-900/20"
-                                  : "bg-stone-800/50 border border-stone-700/50 rounded-bl-sm flex gap-3"
-                          }`}
-                      >
-                        {msg.role === "assistant" && (
+                      {msg.role === "user" ? (
+                          // 用户消息 - 文件卡片在气泡上方
+                          <div className="flex flex-col items-end max-w-[85%]">
+                            {/* 文件卡片区域 */}
+                            {msg.files && msg.files.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2 justify-end">
+                                  {msg.files.map(renderFileCard)}
+                                </div>
+                            )}
+                            {/* 文字气泡 */}
+                            <div className="px-4 py-3 rounded-2xl leading-relaxed bg-gradient-to-br from-amber-600 to-amber-700 text-stone-900 rounded-br-sm shadow-lg shadow-amber-900/20">
+                              <div className="whitespace-pre-wrap break-words text-left">
+                                {msg.content}
+                              </div>
+                            </div>
+                          </div>
+                      ) : (
+                          // 助手消息
+                          <div className="max-w-[85%] px-4 py-3 rounded-2xl leading-relaxed bg-stone-800/50 border border-stone-700/50 rounded-bl-sm flex gap-3">
                             <div className="w-4 h-4 mt-0.5 rounded-full border-[1.5px] border-amber-400/70 flex items-center justify-center shrink-0">
                               <div className="w-1.5 h-1.5 rounded-full bg-amber-400/70" />
                             </div>
-                        )}
-                        <div className="whitespace-pre-wrap break-words text-left">
-                          {msg.content}
-                          {msg.role === "assistant" && isStreaming && idx === messages.length - 1 && (
-                              <span className="inline-block ml-0.5 text-amber-400 animate-pulse">▊</span>
-                          )}
-                        </div>
-                      </div>
+                            <div className="whitespace-pre-wrap break-words text-left">
+                              {msg.content}
+                              {isStreaming && idx === messages.length - 1 && (
+                                  <span className="inline-block ml-0.5 text-amber-400 animate-pulse">▊</span>
+                              )}
+                            </div>
+                          </div>
+                      )}
                     </div>
                 ))}
                 <div ref={messagesEndRef} />
