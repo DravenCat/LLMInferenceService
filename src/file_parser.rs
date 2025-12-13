@@ -1,19 +1,15 @@
+use anyhow::Result;
+use docx_rs::{
+    DocumentChild, ParagraphChild, RunChild, TableCellContent, TableChild, TableRowChild,
+};
+use pdf::{content::*, file::FileOptions};
 use std::collections::HashMap;
 use std::env::temp_dir;
+use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::fs::File;
-use std::io::Read;
-use anyhow::Result;
-use pdf::{
-    file::FileOptions,
-    content::*,
-};
-use docx_rs::{
-    DocumentChild, ParagraphChild, RunChild, TableChild, TableRowChild, TableCellContent
-};
-
 
 pub type FileCache = Arc<RwLock<HashMap<String, CacheFile>>>;
 
@@ -21,14 +17,11 @@ pub type FileCache = Arc<RwLock<HashMap<String, CacheFile>>>;
 pub struct CacheFile {
     pub filename: String,
     pub content: String,
-
 }
-
 
 pub fn new_file_cache() -> FileCache {
     Arc::new(RwLock::new(HashMap::new()))
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileType {
@@ -37,20 +30,18 @@ pub enum FileType {
     DOCX,
 }
 
-
 impl FileType {
     pub fn from_extension(extension: &str) -> Option<Self> {
         match extension.to_lowercase().as_str() {
             "txt" => Some(FileType::TXT),
             "pdf" => Some(FileType::PDF),
             "docx" => Some(FileType::DOCX),
-            _ => None
+            _ => None,
         }
     }
 }
 
-
-pub async fn parse_file(path: &Path, file_bytes : &[u8]) -> Result<String> {
+pub async fn parse_file(path: &Path, file_bytes: &[u8]) -> Result<String> {
     let extension = path.extension().unwrap().to_str().unwrap();
 
     let file_type = FileType::from_extension(extension).unwrap();
@@ -70,12 +61,10 @@ pub async fn parse_file(path: &Path, file_bytes : &[u8]) -> Result<String> {
     result
 }
 
-
 async fn parse_txt(path: &Path) -> Result<String> {
     let content = tokio::fs::read_to_string(path).await?;
     Ok(content)
 }
-
 
 async fn parse_pdf(path: &Path) -> Result<String> {
     let file = FileOptions::cached().open(path)?;
@@ -93,7 +82,7 @@ async fn parse_pdf(path: &Path) -> Result<String> {
                                     text_content.push_str(&s);
                                 }
                             }
-                            Op::TextDrawAdjusted {array} => {
+                            Op::TextDrawAdjusted { array } => {
                                 for item in array {
                                     if let TextDrawAdjusted::Text(text) = item {
                                         if let Ok(s) = text.to_string() {
@@ -114,7 +103,7 @@ async fn parse_pdf(path: &Path) -> Result<String> {
         text_content.push_str("\n\n");
     }
 
-    let cleaned : String = text_content
+    let cleaned: String = text_content
         .lines()
         .map(|line| line.trim())
         .filter(|line| !line.is_empty())
@@ -123,7 +112,6 @@ async fn parse_pdf(path: &Path) -> Result<String> {
 
     Ok(cleaned)
 }
-
 
 async fn parse_docx(path: &Path) -> Result<String> {
     let mut file = File::open(path)?;
@@ -150,7 +138,6 @@ async fn parse_docx(path: &Path) -> Result<String> {
     Ok(cleaned)
 }
 
-
 /// 从 DocumentChild 中提取文本
 fn extract_text_from_document_child(child: &DocumentChild, output: &mut String) {
     match child {
@@ -166,24 +153,22 @@ fn extract_text_from_document_child(child: &DocumentChild, output: &mut String) 
         }
         DocumentChild::Table(table) => {
             for row in &table.rows {
-                if let TableChild::TableRow(tr) = row {
-                    let mut row_texts = Vec::new();
-                    for cell in &tr.cells {
-                        if let TableRowChild::TableCell(tc) = cell {
-                            let mut cell_text = String::new();
-                            for tc_child in &tc.children {
-                                if let TableCellContent::Paragraph(p) = tc_child {
-                                    for p_child in &p.children {
-                                        extract_text_from_paragraph_child(p_child, &mut cell_text);
-                                    }
-                                }
+                let TableChild::TableRow(tr) = row;
+                let mut row_texts = Vec::new();
+                for cell in &tr.cells {
+                    let TableRowChild::TableCell(tc) = cell;
+                    let mut cell_text = String::new();
+                    for tc_child in &tc.children {
+                        if let TableCellContent::Paragraph(p) = tc_child {
+                            for p_child in &p.children {
+                                extract_text_from_paragraph_child(p_child, &mut cell_text);
                             }
-                            row_texts.push(cell_text.trim().to_string());
                         }
                     }
-                    output.push_str(&row_texts.join("\t"));
-                    output.push('\n');
+                    row_texts.push(cell_text.trim().to_string());
                 }
+                output.push_str(&row_texts.join("\t"));
+                output.push('\n');
             }
             output.push('\n');
         }
