@@ -2,7 +2,7 @@ mod handler;
 mod error;
 mod types;
 mod mistral_runner;
-
+mod file_parser;
 
 use axum::{
     Router,
@@ -15,18 +15,23 @@ use tower_http::{
     compression::CompressionLayer,
 };
 use tracing_subscriber;
+use crate::file_parser::{new_file_cache, FileCache};
 use crate::handler::routes;
 
 
 #[derive(Clone)]
-pub struct AppState;
+pub struct AppState {
+    pub file_cache: FileCache,
+}
 
 #[tokio::main]
 async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let state = AppState;
+    let state = AppState {
+        file_cache: new_file_cache(),
+    };
 
     let cors = CorsLayer::new()
         .allow_origin(Any)

@@ -10,7 +10,7 @@ const FileUpload = forwardRef(({
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const allowedExtensions = [".txt", ".pdf", ".docx", ".pptx"];
+  const allowedExtensions = [".txt", ".pdf", ".docx"];
 
   useImperativeHandle(ref, () => ({
     trigger: () => fileInputRef.current?.click()
@@ -81,7 +81,6 @@ const FileUpload = forwardRef(({
     const iconMap = {
       pdf: "📄",
       docx: "📝",
-      pptx: "📊",
       txt: "📃",
     };
     return iconMap[ext] || "📎";

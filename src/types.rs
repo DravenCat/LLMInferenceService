@@ -11,3 +11,11 @@ pub struct InferenceRequest {
 pub struct InferenceResponse {
     pub text: String,
 }
+
+
+#[derive(Serialize)]
+pub struct UploadResponse {
+    pub file_id: String,
+    pub filename: String,
+    pub size: usize,
+}

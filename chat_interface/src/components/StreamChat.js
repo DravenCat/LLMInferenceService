@@ -224,7 +224,7 @@ const StreamingChat = () => {
                         ? "text-stone-600 cursor-not-allowed"
                         : "text-stone-400 hover:text-stone-200 hover:bg-stone-700/50"
                     }`}
-                    title="Upload File (txt, pdf, docx, pptx)"
+                    title="Upload File (txt, pdf, docx)"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -273,7 +273,7 @@ const StreamingChat = () => {
             </div>
 
             <p className="text-center text-xs text-stone-600 mt-3">
-              Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx
+              Enter to send · Shift + Enter for new line · Supports txt, pdf, docx
             </p>
           </div>
         </footer>

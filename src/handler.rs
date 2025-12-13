@@ -1,5 +1,5 @@
 use axum::{
-    extract::{State},
+    extract::{State, Multipart},
     Json,
     Router,
     routing::{get, post},
@@ -10,7 +10,7 @@ use tokio_stream::{StreamExt};
 use std::{time::Duration};
 use crate::AppState;
 
-use crate::types::{InferenceRequest, InferenceResponse};
+use crate::types::{InferenceRequest, InferenceResponse, UploadResponse};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,9 +82,20 @@ pub async fn infer_stream_handler(
     )
 
 }
+
+
+// pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multipart) -> Json<UploadResponse> {
+//
+// }
+
+
+pub async fn remove_handler() {}
+
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/generate", post(infer_handler))
         .route("/generate/stream", post(infer_stream_handler))
         .route("/health", get(healthy))
+        // .route("/upload", post(infer_handler))
 }
