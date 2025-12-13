@@ -316,7 +316,7 @@ const StreamingChat = () => {
   const handleDeleteSession = async (sessionId) => {
     // 调用后端删除会话
     try {
-      await fetch(`http://localhost:8080/session/${sessionId}`, {
+      await fetch(`http://localhost:8080/sessions/${sessionId}`, {
         method: "DELETE",
       });
     } catch (e) {

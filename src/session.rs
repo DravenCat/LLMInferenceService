@@ -158,6 +158,9 @@ impl SessionHelper {
         match sessions.get(session_id) {
             Some(_) => {
                 sessions.remove(session_id);
+                {
+                    println!("Number of alive session {}", sessions.len());
+                }
             },
             None => {
                 return false
