@@ -148,11 +148,11 @@ const FileUpload = forwardRef(({
                     {getFileIcon(file.filename)}
 
                     {/* 文件信息 */}
-                    <div className="flex flex-col min-w-0">
-                <span className="text-sm text-stone-200 font-medium truncate max-w-[180px]">
+                    <div className="flex flex-col min-w-0 items-start text-left">
+                <span className="text-sm text-stone-200 font-medium truncate max-w-[180px] text-left">
                   {file.filename}
                 </span>
-                      <span className="text-xs text-stone-500">
+                      <span className="text-xs text-stone-500 text-left">
                   {getFileTypeName(file.filename)} · {formatFileSize(file.filesize)}
                 </span>
                     </div>
