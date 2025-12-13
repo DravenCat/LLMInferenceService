@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import styles from "./FileUpload.module.css";
 
 const FileUpload = forwardRef(({
   onFileUploaded,
   onFileRemoved,
+  onUploadError,
   disabled,
   attachedFiles = [],
 }, ref) => {
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
   const allowedExtensions = [".txt", ".pdf", ".docx", ".pptx"];
@@ -16,13 +16,6 @@ const FileUpload = forwardRef(({
   useImperativeHandle(ref, () => ({
     trigger: () => fileInputRef.current?.click()
   }));
-
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
 
   // 格式化文件大小
   const formatFileSize = (bytes) => {
@@ -44,7 +37,6 @@ const FileUpload = forwardRef(({
       pdf: "PDF",
       docx: "Word Document",
       txt: "Text File",
-      pptx: "Power Point File"
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };
@@ -58,13 +50,19 @@ const FileUpload = forwardRef(({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 前端文件类型校验
     const ext = "." + file.name.split(".").pop().toLowerCase();
     if (!allowedExtensions.includes(ext)) {
-      setError(`Unsupported file type. Please upload: ${allowedExtensions.join(", ")}`);
+      onUploadError?.({
+        error: "Unsupported file type",
+        file_type: ext.slice(1) // 移除前面的点
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
     }
 
-    setError(null);
     setUploading(true);
 
     try {
@@ -78,14 +76,20 @@ const FileUpload = forwardRef(({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to upload");
+        // 调用父组件的错误处理函数
+        onUploadError?.(errorData);
+        return;
       }
 
       const data = await response.json();
       data.filesize = file.size;
       onFileUploaded?.(data);
     } catch (err) {
-      setError(err.message);
+      // 网络错误等
+      onUploadError?.({
+        error: "Upload failed",
+        file_type: file.name.split('.').pop() || "unknown"
+      });
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -108,7 +112,7 @@ const FileUpload = forwardRef(({
     onFileRemoved?.(fileToRemove.file_id);
   };
 
-  const showStatus = attachedFiles.length > 0 || uploading || error;
+  const showStatus = attachedFiles.length > 0 || uploading;
 
   return (
     <>
@@ -164,21 +168,6 @@ const FileUpload = forwardRef(({
               <div className={styles.uploadingInfo}>
                 <span className={styles.title}>Uploading...</span>
                 <span className={styles.subtitle}>Please wait</span>
-              </div>
-            </div>
-          )}
-
-          {/* 错误状态 */}
-          {error && (
-            <div className={styles.errorCard}>
-              <div className={styles.errorIcon}>
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-              </div>
-              <div className={styles.errorInfo}>
-                <span className={styles.title}>Upload failed</span>
-                <span className={styles.message}>{error}</span>
               </div>
             </div>
           )}

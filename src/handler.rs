@@ -10,7 +10,9 @@ use tokio_stream::{StreamExt};
 use std::{time::Duration};
 use std::path::Path;
 use axum::routing::delete;
+use reqwest::StatusCode;
 use crate::AppState;
+use crate::error::UnsupportedFileError;
 use crate::file_parser::{parse_file, CacheFile};
 use crate::types::{DeleteResponse, InferenceRequest, InferenceResponse, UploadResponse};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
@@ -106,9 +108,31 @@ async fn build_prompt(state: &AppState, prompt: &String) -> String {
 }
 
 
-pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multipart) -> Json<UploadResponse> {
+pub async fn upload_handler(
+    State(state): State<AppState>,
+    mut multipart : Multipart)
+    -> Result<Json<UploadResponse>, (StatusCode, Json<UnsupportedFileError>)> {
     let item = multipart.next_field().await.unwrap().unwrap();
-    let filename = item.file_name().map(|s| s.to_string()).unwrap_or_else(|| "".to_string());
+    let filename = item
+        .file_name()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "".to_string());
+
+    let extension = Path::new(&filename)
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+
+    let allowed_extension = vec!["txt", "pdf", "docx", "pptx"];
+    if !allowed_extension.contains(&extension.to_lowercase().as_str()) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(UnsupportedFileError {
+                error : "Unsupported file type".to_string(),
+                file_type : extension.to_string()
+            })
+        ))
+    }
 
     let data = item.bytes().await.unwrap();
     let file_size = data.len();
@@ -127,11 +151,11 @@ pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multi
         cache.insert(file_id.clone(), cache_file);
         println!("Current number of files in cache: {}", cache.len());
     }
-    Json(UploadResponse {
+    Ok(Json(UploadResponse {
         file_id,
         filename,
         file_size
-    })
+    }))
 }
 
 

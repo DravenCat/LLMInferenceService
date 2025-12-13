@@ -9,6 +9,8 @@ const StreamingChat = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [model, setModel] = useState("qwen");
   const [attachedFiles, setAttachedFiles] = useState([]);
+  const [uploadError, setUploadError] = useState(null);
+  const [isErrorHiding, setIsErrorHiding] = useState(false);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -35,6 +37,23 @@ const StreamingChat = () => {
   // 添加文件到列表
   const handleFileUploaded = (fileData) => {
     setAttachedFiles((prev) => [...prev, fileData]);
+  };
+
+  // 处理上传错误
+  const handleUploadError = (errorData) => {
+    setUploadError(errorData);
+    setIsErrorHiding(false);
+    
+    // 2.7秒后开始隐藏动画
+    setTimeout(() => {
+      setIsErrorHiding(true);
+    }, 2700);
+    
+    // 3秒后清除错误
+    setTimeout(() => {
+      setUploadError(null);
+      setIsErrorHiding(false);
+    }, 3000);
   };
 
   // 从列表中移除文件
@@ -66,7 +85,6 @@ const StreamingChat = () => {
       pdf: "PDF",
       docx: "Word Document",
       txt: "Text File",
-      pptx: "Power Point File"
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };
@@ -201,6 +219,27 @@ const StreamingChat = () => {
 
   return (
     <div className={styles.chatContainer}>
+      {/* Error Toast */}
+      {uploadError && (
+        <div className={`${styles.errorToast} ${isErrorHiding ? styles.hiding : ''}`}>
+          <div className={styles.errorToastIcon}>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className={styles.errorToastContent}>
+            <span className={styles.errorToastTitle}>{uploadError.error}</span>
+            <span className={styles.errorToastMessage}>The selected file format is not supported</span>
+            <span className={styles.errorToastFileType}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              .{uploadError.file_type}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
@@ -272,6 +311,7 @@ const StreamingChat = () => {
               ref={fileUploadRef}
               onFileUploaded={handleFileUploaded}
               onFileRemoved={handleFileRemoved}
+              onUploadError={handleUploadError}
               disabled={isStreaming}
               attachedFiles={attachedFiles}
             />
@@ -281,7 +321,7 @@ const StreamingChat = () => {
                 onClick={handlePlusClick}
                 disabled={isStreaming}
                 className={styles.attachButton}
-                title="Upload File (txt, pdf, docx, pptx)"
+                title="Upload File (txt, pdf, docx)"
               >
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -328,7 +368,7 @@ const StreamingChat = () => {
           </div>
 
           <p className={styles.footerHint}>
-            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx
+            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx
           </p>
         </div>
       </footer>
