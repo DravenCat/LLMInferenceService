@@ -12,10 +12,13 @@ use std::path::Path;
 use axum::routing::delete;
 use reqwest::StatusCode;
 use crate::AppState;
-use crate::error::{RemoveFileError, UnsupportedFileError};
+use crate::error::{RemoveFileError, RemoveSessionError, UnsupportedFileError};
 use crate::file_parser::{parse_file, CacheFile};
-use crate::types::{DeleteResponse, InferenceRequest, InferenceResponse, UploadResponse};
+use crate::types::{
+    DeleteResponse, InferenceRequest, InferenceResponse, RemoveSessionResponse, UploadResponse
+};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
+use crate::session::SessionHelper;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthResponse {
@@ -186,6 +189,26 @@ pub async fn remove_handler(State(state): State<AppState>,
 }
 
 
+pub async fn remove_session_handler(State(state): State<AppState>,
+                                    axum::extract::Path(session_id): axum::extract::Path<String>)
+    -> Result<Json<RemoveSessionResponse>, (StatusCode, Json<RemoveSessionError>)> {
+    if !SessionHelper::remove(&state.session_manager, &session_id).await {
+        return Err(
+            (StatusCode::BAD_REQUEST,
+            Json(RemoveSessionError {
+                error : "Session does not exist".to_string(),
+                session_id : session_id.to_string()
+            }))
+        )
+    }
+
+    Ok(Json(RemoveSessionResponse {
+        session_id,
+        cleared: true
+    }))
+}
+
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/generate", post(infer_handler))
@@ -193,4 +216,5 @@ pub fn routes() -> Router<AppState> {
         .route("/health", get(healthy))
         .route("/upload", post(upload_handler))
         .route("/files/{file_id}", delete(remove_handler))
+        .route("/sessions/{session_id}", delete(remove_session_handler))
 }

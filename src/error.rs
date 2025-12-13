@@ -13,3 +13,9 @@ pub struct RemoveFileError {
     pub file_id: String,
 }
 
+
+#[derive(Serialize)]
+pub struct RemoveSessionError {
+    pub error: String,
+    pub session_id: String,
+}

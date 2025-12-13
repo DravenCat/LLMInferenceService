@@ -3,6 +3,7 @@ mod error;
 mod types;
 mod mistral_runner;
 mod file_parser;
+mod session;
 
 use axum::{
     Router,
@@ -17,11 +18,12 @@ use tower_http::{
 use tracing_subscriber;
 use crate::file_parser::{new_file_cache, FileCache};
 use crate::handler::routes;
-
+use crate::session::{new_session_manager, SessionManager};
 
 #[derive(Clone)]
 pub struct AppState {
     pub file_cache: FileCache,
+    pub session_manager: SessionManager,
 }
 
 #[tokio::main]
@@ -31,6 +33,7 @@ async fn main() {
 
     let state = AppState {
         file_cache: new_file_cache(),
+        session_manager : new_session_manager(),
     };
 
     let cors = CorsLayer::new()

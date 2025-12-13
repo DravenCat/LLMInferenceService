@@ -26,3 +26,10 @@ pub struct DeleteResponse {
     pub file_id: String,
     pub result: bool,
 }
+
+
+#[derive(Serialize)]
+pub struct RemoveSessionResponse {
+    pub session_id: String,
+    pub cleared: bool,
+}
