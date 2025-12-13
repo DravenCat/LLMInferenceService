@@ -12,7 +12,7 @@ use std::path::Path;
 use axum::routing::delete;
 use reqwest::StatusCode;
 use crate::AppState;
-use crate::error::UnsupportedFileError;
+use crate::error::{RemoveFileError, UnsupportedFileError};
 use crate::file_parser::{parse_file, CacheFile};
 use crate::types::{DeleteResponse, InferenceRequest, InferenceResponse, UploadResponse};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
@@ -161,9 +161,20 @@ pub async fn upload_handler(
 
 pub async fn remove_handler(State(state): State<AppState>,
                             axum::extract::Path(file_id): axum::extract::Path<String>)
-    -> Json<DeleteResponse> {
+    -> Result<Json<DeleteResponse>, (StatusCode, Json<RemoveFileError>)> {
     let mut cache = state.file_cache.write().await;
-    cache.remove(&file_id);
+    match cache.get(&file_id) {
+        Some(_) => {
+            cache.remove(&file_id);
+        }
+        None => {
+            return Err((StatusCode::BAD_REQUEST,
+                Json(RemoveFileError {
+                error : "File does not exist".to_string(),
+                file_name
+            })))
+        }
+    }
     println!("Current number of files in cache: {}", cache.len());
 
     let delete_response = DeleteResponse {
@@ -171,7 +182,7 @@ pub async fn remove_handler(State(state): State<AppState>,
         result: true,
     };
 
-    Json(delete_response)
+    Ok(Json(delete_response))
 }
 
 
