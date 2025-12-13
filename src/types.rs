@@ -19,3 +19,10 @@ pub struct UploadResponse {
     pub filename: String,
     pub file_size: usize,
 }
+
+
+#[derive(Serialize)]
+pub struct DeleteResponse {
+    pub file_id: String,
+    pub result: bool,
+}

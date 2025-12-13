@@ -9,9 +9,10 @@ use serde::{Deserialize, Serialize};
 use tokio_stream::{StreamExt};
 use std::{time::Duration};
 use std::path::Path;
+use axum::routing::delete;
 use crate::AppState;
 use crate::file_parser::{parse_file, CacheFile};
-use crate::types::{InferenceRequest, InferenceResponse, UploadResponse};
+use crate::types::{DeleteResponse, InferenceRequest, InferenceResponse, UploadResponse};
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,6 +105,7 @@ pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multi
     {
         let mut cache = state.file_cache.write().await;
         cache.insert(file_id.clone(), cache_file);
+        println!("Current number of files in cache: {}", cache.len());
     }
     Json(UploadResponse {
         file_id,
@@ -113,7 +115,20 @@ pub async fn upload_handler(State(state): State<AppState>, mut multipart : Multi
 }
 
 
-pub async fn remove_handler() {}
+pub async fn remove_handler(State(state): State<AppState>,
+                            axum::extract::Path(file_id): axum::extract::Path<String>)
+    -> Json<DeleteResponse> {
+    let mut cache = state.file_cache.write().await;
+    cache.remove(&file_id);
+    println!("Current number of files in cache: {}", cache.len());
+
+    let delete_response = DeleteResponse {
+        file_id,
+        result: true,
+    };
+
+    Json(delete_response)
+}
 
 
 pub fn routes() -> Router<AppState> {
@@ -122,4 +137,5 @@ pub fn routes() -> Router<AppState> {
         .route("/generate/stream", post(infer_stream_handler))
         .route("/health", get(healthy))
         .route("/upload", post(upload_handler))
+        .route("/files/{file_id}", delete(remove_handler))
 }
