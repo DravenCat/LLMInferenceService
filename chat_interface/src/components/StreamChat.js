@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ModelSelector from "./ModelSelector";
 import FileUpload from "./FileUpload";
+import Sidebar from "./Sidebar";
 import styles from "./StreamChat.module.css";
 
 const StreamingChat = () => {
@@ -11,6 +12,11 @@ const StreamingChat = () => {
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [uploadError, setUploadError] = useState(null);
   const [isErrorHiding, setIsErrorHiding] = useState(false);
+  
+  // 侧边栏和会话管理
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -22,6 +28,25 @@ const StreamingChat = () => {
     { id: "smollm2", name: "SmolLM2 1.7B" },
     { id: "llama8b", name: "LLaMA 8B" },
   ];
+
+  // 从 localStorage 加载会话列表
+  useEffect(() => {
+    const savedSessions = localStorage.getItem("chatSessions");
+    if (savedSessions) {
+      try {
+        setSessions(JSON.parse(savedSessions));
+      } catch (e) {
+        console.error("Failed to parse saved sessions:", e);
+      }
+    }
+  }, []);
+
+  // 保存会话列表到 localStorage
+  useEffect(() => {
+    if (sessions.length > 0) {
+      localStorage.setItem("chatSessions", JSON.stringify(sessions));
+    }
+  }, [sessions]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,12 +69,10 @@ const StreamingChat = () => {
     setUploadError(errorData);
     setIsErrorHiding(false);
     
-    // 2.7秒后开始隐藏动画
     setTimeout(() => {
       setIsErrorHiding(true);
     }, 2700);
     
-    // 3秒后清除错误
     setTimeout(() => {
       setUploadError(null);
       setIsErrorHiding(false);
@@ -94,6 +117,37 @@ const StreamingChat = () => {
     return filename?.split(".").pop().toLowerCase() || "";
   };
 
+  // 更新会话
+  const updateSession = (sessionId, newMessages, firstMessage = null) => {
+    setSessions((prev) => {
+      const existingIndex = prev.findIndex((s) => s.id === sessionId);
+      const now = new Date().toISOString();
+      
+      if (existingIndex >= 0) {
+        // 更新现有会话
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          messages: newMessages,
+          updatedAt: now,
+        };
+        // 将更新的会话移到最前面
+        const [session] = updated.splice(existingIndex, 1);
+        return [session, ...updated];
+      } else {
+        // 创建新会话
+        const newSession = {
+          id: sessionId,
+          messages: newMessages,
+          firstMessage: firstMessage || newMessages[0]?.content || "New Chat",
+          createdAt: now,
+          updatedAt: now,
+        };
+        return [newSession, ...prev];
+      }
+    });
+  };
+
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -102,16 +156,18 @@ const StreamingChat = () => {
     }
     abortControllerRef.current = new AbortController();
 
-    // 构建用户消息，包含文件信息
+    // 构建用户消息
     const userMessage = {
       role: "user",
       content: input.trim(),
       files: attachedFiles.length > 0 ? [...attachedFiles] : null
     };
-    setMessages((prev) => [...prev, userMessage, { role: "assistant", content: "" }]);
+    
+    const newMessages = [...messages, userMessage, { role: "assistant", content: "" }];
+    setMessages(newMessages);
 
     const currentPrompt = input.trim();
-    const currentFileIds = attachedFiles.map((f) => f.file_id);
+    const isFirstMessage = messages.length === 0;
 
     setInput("");
     setAttachedFiles([]);
@@ -123,9 +179,9 @@ const StreamingChat = () => {
         model_name: model,
       };
 
-      // 支持多个文件 ID
-      if (currentFileIds.length > 0) {
-        requestBody.file_ids = currentFileIds;
+      // 如果已有会话 ID，传给后端
+      if (currentSessionId) {
+        requestBody.session_id = currentSessionId;
       }
 
       const response = await fetch("http://localhost:8080/generate/stream", {
@@ -140,6 +196,8 @@ const StreamingChat = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let fullResponse = "";
+      let receivedSessionId = currentSessionId;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -150,39 +208,73 @@ const StreamingChat = () => {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
+          // 处理会话信息事件
+          if (line.startsWith("event: session")) {
+            continue;
+          }
+          
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
             if (data === "[DONE]") continue;
 
             try {
               const parsed = JSON.parse(data);
+              
+              // 检查是否是会话信息
+              if (parsed.session_id && parsed.type === "session_info") {
+                receivedSessionId = parsed.session_id;
+                if (!currentSessionId) {
+                  setCurrentSessionId(receivedSessionId);
+                }
+                continue;
+              }
+              
               const content = parsed.content || "";
               if (content) {
+                fullResponse += content;
                 setMessages((prev) => {
-                  const newMessages = [...prev];
-                  newMessages[newMessages.length - 1] = {
-                    ...newMessages[newMessages.length - 1],
-                    content: newMessages[newMessages.length - 1].content + content,
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...updated[updated.length - 1],
+                    content: updated[updated.length - 1].content + content,
                   };
-                  return newMessages;
+                  return updated;
                 });
               }
             } catch {
-              // ignore
+              // ignore parse errors
             }
           }
         }
       }
+
+      // 推理完成后更新会话
+      if (receivedSessionId) {
+        const finalMessages = [
+          ...messages,
+          userMessage,
+          { role: "assistant", content: fullResponse }
+        ];
+        updateSession(
+          receivedSessionId,
+          finalMessages,
+          isFirstMessage ? currentPrompt : null
+        );
+        if (!currentSessionId) {
+          setCurrentSessionId(receivedSessionId);
+        }
+      }
+
     } catch (error) {
       if (error.name === "AbortError") return;
       console.error("Streaming request error:", error);
       setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          ...newMessages[newMessages.length - 1],
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
           content: "Sorry, something went wrong. Please try again.",
         };
-        return newMessages;
+        return updated;
       });
     } finally {
       setIsStreaming(false);
@@ -195,6 +287,54 @@ const StreamingChat = () => {
       e.preventDefault();
       handleSubmit();
     }
+  };
+
+  // 侧边栏操作
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setAttachedFiles([]);
+    setInput("");
+    setIsSidebarOpen(false);
+  };
+
+  const handleSelectSession = (sessionId) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    if (session) {
+      setMessages(session.messages || []);
+      setCurrentSessionId(sessionId);
+      setAttachedFiles([]);
+      setInput("");
+    }
+    setIsSidebarOpen(false);
+  };
+
+  const handleDeleteSession = async (sessionId) => {
+    // 调用后端删除会话
+    try {
+      await fetch(`http://localhost:8080/session/${sessionId}`, {
+        method: "DELETE",
+      });
+    } catch (e) {
+      console.error("Failed to delete session from server:", e);
+    }
+
+    // 从本地状态删除
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    
+    // 如果删除的是当前会话，清空聊天
+    if (sessionId === currentSessionId) {
+      setMessages([]);
+      setCurrentSessionId(null);
+    }
+
+    // 更新 localStorage
+    const updatedSessions = sessions.filter((s) => s.id !== sessionId);
+    localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
   };
 
   // 渲染消息中的文件卡片
@@ -219,6 +359,17 @@ const StreamingChat = () => {
 
   return (
     <div className={styles.chatContainer}>
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={handleToggleSidebar}
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSelectSession={handleSelectSession}
+        onNewChat={handleNewChat}
+        onDeleteSession={handleDeleteSession}
+      />
+
       {/* Error Toast */}
       {uploadError && (
         <div className={`${styles.errorToast} ${isErrorHiding ? styles.hiding : ''}`}>
@@ -240,9 +391,10 @@ const StreamingChat = () => {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header - 添加左边距给侧边栏按钮留空间 */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
+          <div className={styles.headerSpacer} />
           <div className={styles.logo}>
             <div className={styles.logoInner} />
           </div>
@@ -268,21 +420,17 @@ const StreamingChat = () => {
                 className={`${styles.messageWrapper} ${styles[msg.role]}`}
               >
                 {msg.role === "user" ? (
-                  // 用户消息 - 文件卡片在气泡上方
                   <div className={styles.userMessageContainer}>
-                    {/* 文件卡片区域 */}
                     {msg.files && msg.files.length > 0 && (
                       <div className={styles.userFiles}>
                         {msg.files.map(renderFileCard)}
                       </div>
                     )}
-                    {/* 文字气泡 */}
                     <div className={styles.userBubble}>
                       <div className={styles.content}>{msg.content}</div>
                     </div>
                   </div>
                 ) : (
-                  // 助手消息
                   <div className={styles.assistantBubble}>
                     <div className={styles.avatar}>
                       <div className={styles.avatarInner} />
@@ -306,7 +454,6 @@ const StreamingChat = () => {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <div className={styles.inputContainer}>
-            {/* FileUpload 组件 */}
             <FileUpload
               ref={fileUploadRef}
               onFileUploaded={handleFileUploaded}
@@ -321,7 +468,7 @@ const StreamingChat = () => {
                 onClick={handlePlusClick}
                 disabled={isStreaming}
                 className={styles.attachButton}
-                title="Upload File (txt, pdf, docx)"
+                title="Upload File (txt, pdf, docx, pptx)"
               >
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -368,7 +515,7 @@ const StreamingChat = () => {
           </div>
 
           <p className={styles.footerHint}>
-            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx
+            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx
           </p>
         </div>
       </footer>

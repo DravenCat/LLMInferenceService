@@ -18,7 +18,7 @@ use crate::types::{
     DeleteResponse, InferenceRequest, InferenceResponse, RemoveSessionResponse, UploadResponse
 };
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
-use crate::session::SessionHelper;
+use crate::session::{ChatMessage, SessionConfig, SessionHelper};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthResponse {
@@ -42,7 +42,10 @@ pub async fn infer_handler(
         .await
         .unwrap_or_else(|_| "Inference failed".to_string());
 
-    Json(InferenceResponse { text })
+    Json(InferenceResponse {
+        text,
+        session_id: None,
+    })
 }
 
 pub async fn infer_stream_handler(
@@ -54,16 +57,56 @@ pub async fn infer_stream_handler(
     let (tx, rx) = tokio::sync::mpsc::channel::<String>(32);
 
     let model = req.model;
-    let prompt = build_prompt(&state, &req.prompt).await;
+    let user_prompt = req.prompt;
+
+    let session_id = req.session_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let config = SessionConfig::default();
+
+    let mut session = SessionHelper::get_or_create(
+        &state.session_manager,
+        &session_id,
+        config
+    ).await;
+
+    let prompt = build_prompt(&state, &user_prompt).await;
+
+    session.add_user_message(prompt);
+
+    let messages: Vec<ChatMessage> = session.get_messages().to_vec();
+
+    let session_manager = state.session_manager.clone();
+    let session_id_clone = session_id.clone();
 
     tokio::spawn(async move {
-        if let Ok(mut stream) = run_inference_stream(model.as_str(), prompt.as_str()).await {
+        let mut full_response = String::new();
+
+        if let Ok(mut stream) = run_inference_stream(&model, &messages).await {
             while let Some(token) = stream.next().await {
+                full_response.push_str(&token);
                 if tx.send(token).await.is_err() {
                     break;
                 }
             }
         }
+
+        if !full_response.is_empty() {
+            let mut session = SessionHelper::get_or_create(
+                &session_manager,
+                &session_id_clone,
+                SessionConfig::default(),
+            ).await;
+            session.add_assistant_message(full_response);
+            SessionHelper::update(&session_manager, session).await;
+        }
+
+        // 发送会话 ID（作为特殊消息）
+        let session_info = serde_json::json!({
+            "session_id": session_id_clone,
+            "type": "session_info"
+        }).to_string();
+        let _ = tx.send(format!("__SESSION__:{}", session_info)).await;
+
         let _ = tx.send("[DONE]".to_string()).await;
     });
 
@@ -71,6 +114,11 @@ pub async fn infer_stream_handler(
         .map(|token| {
             if token == "[DONE]" {
                 return Ok(Event::default().data("[DONE]"));
+            }
+
+            if token.starts_with("__SESSION__:") {
+                let session_data = &token["__SESSION__:".len()..];
+                return Ok(Event::default().event("session").data(session_data));
             }
 
             let json = serde_json::json!({

@@ -10,7 +10,7 @@ use async_stream::stream;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::Arc;
-
+use crate::session::{ChatMessage, MessageRole};
 
 // download model if missing
 pub async fn download_model(repo: &str, file: &str, path: &str) -> Result<()> {
@@ -96,11 +96,26 @@ pub async fn run_inference_collect(model_name: &str, prompt: &str) -> Result<Str
 }
 
 
+fn build_text_messages(messages: &[ChatMessage]) -> TextMessages {
+    let mut text_messages = TextMessages::new();
+
+    for msg in messages {
+        let role = match msg.role {
+            MessageRole::System => TextMessageRole::System,
+            MessageRole::User => TextMessageRole::User,
+            MessageRole::Assistant => TextMessageRole::Assistant,
+        };
+        text_messages = text_messages.add_message(role, &msg.content);
+    }
+
+    text_messages
+}
+
 
 // streaming inference
 pub async fn run_inference_stream(
     model_name: &str,
-    prompt: &str,
+    messages: &[ChatMessage],
 ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>> {
 
     //download model
@@ -124,14 +139,13 @@ pub async fn run_inference_stream(
     let builder = GgufModelBuilder::new(model_dir, vec![file]).with_logging();
     let model = Arc::new(builder.build().await?);
 
-    let messages = TextMessages::new()
-        .add_message(TextMessageRole::User, prompt);
+    let text_messages = build_text_messages(messages);
 
     let model_for_stream = model.clone();
 
     let output_stream = stream! {
         let mut mistral_stream = model_for_stream
-            .stream_chat_request(messages)
+            .stream_chat_request(text_messages)
             .await
             .unwrap();
 

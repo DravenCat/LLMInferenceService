@@ -24,6 +24,10 @@
     margin: 0 auto;
   }
 
+  .headerSpacer {
+    width: 2.5rem;
+  }
+
   .logo {
     width: 1.75rem;
     height: 1.75rem;
