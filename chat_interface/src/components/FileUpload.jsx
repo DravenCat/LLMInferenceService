@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import styles from "./FileUpload.module.css";
 
 const FileUpload = forwardRef(({
-                                 onFileUploaded,
-                                 onFileRemoved,
-                                 disabled,
-                                 attachedFiles = [],
-                               }, ref) => {
+  onFileUploaded,
+  onFileRemoved,
+  disabled,
+  attachedFiles = [],
+}, ref) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
@@ -47,25 +48,9 @@ const FileUpload = forwardRef(({
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };
 
-  // 获取文件图标（根据类型显示不同颜色）
-  const getFileIcon = (filename) => {
-    const ext = filename?.split(".").pop().toLowerCase();
-
-    const iconColors = {
-      pdf: "text-red-400",
-      docx: "text-blue-400",
-      txt: "text-stone-400",
-    };
-
-    const colorClass = iconColors[ext] || "text-stone-400";
-
-    return (
-        <div className={`w-10 h-10 rounded-lg bg-stone-700/80 flex items-center justify-center ${colorClass}`}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-          </svg>
-        </div>
-    );
+  // 获取文件扩展名
+  const getFileExt = (filename) => {
+    return filename?.split(".").pop().toLowerCase() || "";
   };
 
   const handleFileSelect = async (e) => {
@@ -96,7 +81,6 @@ const FileUpload = forwardRef(({
       }
 
       const data = await response.json();
-      // 添加文件大小信息
       data.filesize = file.size;
       onFileUploaded?.(data);
     } catch (err) {
@@ -126,81 +110,80 @@ const FileUpload = forwardRef(({
   const showStatus = attachedFiles.length > 0 || uploading || error;
 
   return (
-      <>
-        <input
-            ref={fileInputRef}
-            type="file"
-            accept={allowedExtensions.join(",")}
-            onChange={handleFileSelect}
-            disabled={disabled || uploading}
-            className="hidden"
-        />
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={allowedExtensions.join(",")}
+        onChange={handleFileSelect}
+        disabled={disabled || uploading}
+        className={styles.hiddenInput}
+      />
 
-        {showStatus && (
-            <div className="px-3 pt-3 flex flex-wrap gap-2 justify-start items-start">
-              {/* 已上传的文件列表 - Claude 风格卡片 */}
-              {attachedFiles.map((file) => (
-                  <div
-                      key={file.file_id}
-                      className="inline-flex items-center gap-3 p-2 pr-3 bg-stone-800/60 border border-stone-700/50 rounded-xl hover:bg-stone-800/80 transition-colors group"
-                  >
-                    {/* 文件图标 */}
-                    {getFileIcon(file.filename)}
+      {showStatus && (
+        <div className={styles.fileUploadContainer}>
+          {/* 已上传的文件列表 */}
+          {attachedFiles.map((file) => (
+            <div key={file.file_id} className={styles.fileCard}>
+              {/* 文件图标 */}
+              <div className={`${styles.fileIcon} ${styles[getFileExt(file.filename)]}`}>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
 
-                    {/* 文件信息 */}
-                    <div className="flex flex-col min-w-0 items-start text-left">
-                <span className="text-sm text-stone-200 font-medium truncate max-w-[180px] text-left">
-                  {file.filename}
-                </span>
-                      <span className="text-xs text-stone-500 text-left">
+              {/* 文件信息 */}
+              <div className={styles.fileInfo}>
+                <span className={styles.fileName}>{file.filename}</span>
+                <span className={styles.fileMeta}>
                   {getFileTypeName(file.filename)} · {formatFileSize(file.filesize)}
                 </span>
-                    </div>
+              </div>
 
-                    {/* 删除按钮 */}
-                    <button
-                        onClick={() => handleRemove(file)}
-                        disabled={disabled}
-                        className="ml-1 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-stone-600/50 transition-all text-stone-400 hover:text-stone-200"
-                        title="Remove file"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-              ))}
-
-              {/* 上传中状态 */}
-              {uploading && (
-                  <div className="inline-flex items-center gap-3 p-2 pr-4 bg-stone-800/60 border border-stone-700/50 rounded-xl">
-                    <div className="w-10 h-10 rounded-lg bg-stone-700/80 flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-stone-200">Uploading...</span>
-                      <span className="text-xs text-stone-500">Please wait</span>
-                    </div>
-                  </div>
-              )}
-
-              {/* 错误状态 */}
-              {error && (
-                  <div className="inline-flex items-center gap-3 p-2 pr-4 bg-red-900/20 border border-red-800/50 rounded-xl">
-                    <div className="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center text-red-400">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-red-300">Upload failed</span>
-                      <span className="text-xs text-red-400/70">{error}</span>
-                    </div>
-                  </div>
-              )}
+              {/* 删除按钮 */}
+              <button
+                onClick={() => handleRemove(file)}
+                disabled={disabled}
+                className={styles.removeButton}
+                title="Remove file"
+              >
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-        )}
-      </>
+          ))}
+
+          {/* 上传中状态 */}
+          {uploading && (
+            <div className={styles.uploadingCard}>
+              <div className={styles.uploadingIcon}>
+                <div className={styles.spinner} />
+              </div>
+              <div className={styles.uploadingInfo}>
+                <span className={styles.title}>Uploading...</span>
+                <span className={styles.subtitle}>Please wait</span>
+              </div>
+            </div>
+          )}
+
+          {/* 错误状态 */}
+          {error && (
+            <div className={styles.errorCard}>
+              <div className={styles.errorIcon}>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <div className={styles.errorInfo}>
+                <span className={styles.title}>Upload failed</span>
+                <span className={styles.message}>{error}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 });
 

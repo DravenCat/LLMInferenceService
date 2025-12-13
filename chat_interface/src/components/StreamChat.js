@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ModelSelector from "./ModelSelector";
 import FileUpload from "./FileUpload";
+import styles from "./StreamChat.module.css";
 
 const StreamingChat = () => {
   const [messages, setMessages] = useState([]);
@@ -69,15 +70,9 @@ const StreamingChat = () => {
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };
 
-  // 获取文件图标颜色
-  const getFileIconColor = (filename) => {
-    const ext = filename?.split(".").pop().toLowerCase();
-    const iconColors = {
-      pdf: "text-red-400",
-      docx: "text-blue-400",
-      txt: "text-stone-400",
-    };
-    return iconColors[ext] || "text-stone-400";
+  // 获取文件扩展名
+  const getFileExt = (filename) => {
+    return filename?.split(".").pop().toLowerCase() || "";
   };
 
   const handleSubmit = async () => {
@@ -183,176 +178,160 @@ const StreamingChat = () => {
     }
   };
 
-  // 渲染文件卡片（用于消息中显示）
-  const renderFileCard = (file) => (
-      <div
-          key={file.file_id}
-          className="inline-flex items-center gap-2.5 px-3 py-2 bg-stone-800/80 border border-stone-600/50 rounded-xl"
-      >
-        {/* 文件图标 */}
-        <div className={`w-9 h-9 rounded-lg bg-stone-700/80 flex items-center justify-center ${getFileIconColor(file.filename)}`}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+  // 渲染消息中的文件卡片
+  const renderFileCard = (file) => {
+    const ext = getFileExt(file.filename);
+    return (
+      <div key={file.file_id} className={styles.messageFileCard}>
+        <div className={`${styles.fileIcon} ${styles[ext]}`}>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
         </div>
-
-        {/* 文件信息 */}
-        <div className="flex flex-col items-start">
-        <span className="text-sm text-stone-200 font-medium truncate max-w-[160px]">
-          {file.filename}
-        </span>
-          <span className="text-xs text-stone-500">
-          {getFileTypeName(file.filename)} · {formatFileSize(file.filesize)}
-        </span>
+        <div className={styles.fileInfo}>
+          <span className={styles.fileName}>{file.filename}</span>
+          <span className={styles.fileMeta}>
+            {getFileTypeName(file.filename)} · {formatFileSize(file.filesize)}
+          </span>
         </div>
       </div>
-  );
+    );
+  };
 
   return (
-      <div className="flex flex-col h-screen w-full bg-gradient-to-b from-stone-900 to-stone-950 text-stone-200">
-        {/* Header */}
-        <header className="px-6 py-4 border-b border-stone-800/50 bg-stone-900/80 backdrop-blur-xl">
-          <div className="flex items-center gap-3 max-w-3xl mx-auto">
-            <div className="w-7 h-7 rounded-full border-2 border-amber-200/60 flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-amber-200/60" />
-            </div>
-            <span className="text-lg font-medium tracking-wide">Chat</span>
+    <div className={styles.chatContainer}>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <div className={styles.logo}>
+            <div className={styles.logoInner} />
           </div>
-        </header>
+          <span className={styles.title}>Chat</span>
+        </div>
+      </header>
 
-        {/* Messages */}
-        <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
-          {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full opacity-50">
-                <svg className="w-12 h-12 mb-4 text-stone-500" fill="none" viewBox="0 0 48 48" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinejoin="round" d="M24 4L28.5 15.5L40 20L28.5 24.5L24 36L19.5 24.5L8 20L19.5 15.5L24 4Z" />
-                </svg>
-                <p className="text-xl mb-2">Start New Chat</p>
-                <p className="text-sm text-stone-500">Type a message or attach a file to start</p>
-              </div>
-          ) : (
-              <div className="max-w-3xl mx-auto space-y-5">
-                {messages.map((msg, idx) => (
-                    <div
-                        key={idx}
-                        className={`flex animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-                            msg.role === "user" ? "justify-end" : "justify-start"
-                        }`}
-                    >
-                      {msg.role === "user" ? (
-                          // 用户消息 - 文件卡片在气泡上方
-                          <div className="flex flex-col items-end max-w-[85%]">
-                            {/* 文件卡片区域 */}
-                            {msg.files && msg.files.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-2 justify-end">
-                                  {msg.files.map(renderFileCard)}
-                                </div>
-                            )}
-                            {/* 文字气泡 */}
-                            <div className="px-4 py-3 rounded-2xl leading-relaxed bg-gradient-to-br from-amber-600 to-amber-700 text-stone-900 rounded-br-sm shadow-lg shadow-amber-900/20">
-                              <div className="whitespace-pre-wrap break-words text-left">
-                                {msg.content}
-                              </div>
-                            </div>
-                          </div>
-                      ) : (
-                          // 助手消息
-                          <div className="max-w-[85%] px-4 py-3 rounded-2xl leading-relaxed bg-stone-800/50 border border-stone-700/50 rounded-bl-sm flex gap-3">
-                            <div className="w-4 h-4 mt-0.5 rounded-full border-[1.5px] border-amber-400/70 flex items-center justify-center shrink-0">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-400/70" />
-                            </div>
-                            <div className="whitespace-pre-wrap break-words text-left">
-                              {msg.content}
-                              {isStreaming && idx === messages.length - 1 && (
-                                  <span className="inline-block ml-0.5 text-amber-400 animate-pulse">▊</span>
-                              )}
-                            </div>
-                          </div>
+      {/* Messages */}
+      <main className={styles.messagesArea}>
+        {messages.length === 0 ? (
+          <div className={styles.emptyState}>
+            <svg className={styles.emptyIcon} fill="none" viewBox="0 0 48 48" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinejoin="round" d="M24 4L28.5 15.5L40 20L28.5 24.5L24 36L19.5 24.5L8 20L19.5 15.5L24 4Z" />
+            </svg>
+            <p className={styles.emptyTitle}>Start New Chat</p>
+            <p className={styles.emptySubtitle}>Type a message or attach a file to start</p>
+          </div>
+        ) : (
+          <div className={styles.messagesContainer}>
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`${styles.messageWrapper} ${styles[msg.role]}`}
+              >
+                {msg.role === "user" ? (
+                  // 用户消息 - 文件卡片在气泡上方
+                  <div className={styles.userMessageContainer}>
+                    {/* 文件卡片区域 */}
+                    {msg.files && msg.files.length > 0 && (
+                      <div className={styles.userFiles}>
+                        {msg.files.map(renderFileCard)}
+                      </div>
+                    )}
+                    {/* 文字气泡 */}
+                    <div className={styles.userBubble}>
+                      <div className={styles.content}>{msg.content}</div>
+                    </div>
+                  </div>
+                ) : (
+                  // 助手消息
+                  <div className={styles.assistantBubble}>
+                    <div className={styles.avatar}>
+                      <div className={styles.avatarInner} />
+                    </div>
+                    <div className={styles.content}>
+                      {msg.content}
+                      {isStreaming && idx === messages.length - 1 && (
+                        <span className={styles.cursor}>▊</span>
                       )}
                     </div>
-                ))}
-                <div ref={messagesEndRef} />
+                  </div>
+                )}
               </div>
-          )}
-        </main>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </main>
 
-        {/* Input */}
-        <footer className="p-5 border-t border-stone-800/50 bg-stone-900/90 backdrop-blur-xl">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-stone-800/40 border border-stone-700/50 rounded-2xl focus-within:border-amber-600/50 focus-within:ring-1 focus-within:ring-amber-600/20 transition-all">
+      {/* Input */}
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <div className={styles.inputContainer}>
+            {/* FileUpload 组件 */}
+            <FileUpload
+              ref={fileUploadRef}
+              onFileUploaded={handleFileUploaded}
+              onFileRemoved={handleFileRemoved}
+              disabled={isStreaming}
+              attachedFiles={attachedFiles}
+            />
 
-              {/* FileUpload 组件 - 显示所有已上传文件 */}
-              <FileUpload
-                  ref={fileUploadRef}
-                  onFileUploaded={handleFileUploaded}
-                  onFileRemoved={handleFileRemoved}
-                  disabled={isStreaming}
-                  attachedFiles={attachedFiles}
+            <div className={styles.inputRow}>
+              <button
+                onClick={handlePlusClick}
+                disabled={isStreaming}
+                className={styles.attachButton}
+                title="Upload File (txt, pdf, docx)"
+              >
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+              </button>
+
+              <textarea
+                ref={textareaRef}
+                className={styles.textarea}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Send a message..."
+                rows={1}
+                disabled={isStreaming}
               />
 
-              <div className="flex items-end gap-1 p-2">
-                <button
-                    onClick={handlePlusClick}
-                    disabled={isStreaming}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
-                  ${isStreaming
-                        ? "text-stone-600 cursor-not-allowed"
-                        : "text-stone-400 hover:text-stone-200 hover:bg-stone-700/50"
-                    }`}
-                    title="Upload File (txt, pdf, docx)"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                </button>
-
-                <textarea
-                    ref={textareaRef}
-                    className="flex-1 bg-transparent border-none outline-none text-stone-200 text-[15px] leading-relaxed resize-none py-2 px-2 placeholder:text-stone-500 min-h-[24px] max-h-[150px]"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Send a message..."
-                    rows={1}
-                    disabled={isStreaming}
+              <div className={styles.inputActions}>
+                <ModelSelector
+                  model={model}
+                  setModel={setModel}
+                  models={models}
+                  disabled={isStreaming}
                 />
-
-                <div className="flex items-center gap-2">
-                  <ModelSelector
-                      model={model}
-                      setModel={setModel}
-                      models={models}
-                      disabled={isStreaming}
-                  />
-                  <button
-                      className={`w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 text-stone-900 flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 ${
-                          isStreaming || !input.trim() ? "opacity-40 cursor-not-allowed hover:scale-100" : ""
-                      }`}
-                      onClick={handleSubmit}
-                      disabled={isStreaming || !input.trim()}
-                  >
-                    {isStreaming ? (
-                        <div className="flex gap-0.5">
-                          {[0, 1, 2].map((i) => (
-                              <span key={i} className="w-1 h-1 bg-stone-900 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
-                          ))}
-                        </div>
-                    ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 10H17M17 10L12 5M17 10L12 15" />
-                        </svg>
-                    )}
-                  </button>
-                </div>
+                <button
+                  className={styles.sendButton}
+                  onClick={handleSubmit}
+                  disabled={isStreaming || !input.trim()}
+                >
+                  {isStreaming ? (
+                    <div className={styles.loadingDots}>
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                    </div>
+                  ) : (
+                    <svg fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 10H17M17 10L12 5M17 10L12 15" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
-
-            <p className="text-center text-xs text-stone-600 mt-3">
-              Enter to send · Shift + Enter for new line · Supports txt, pdf, docx
-            </p>
           </div>
-        </footer>
-      </div>
+
+          <p className={styles.footerHint}>
+            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 };
 

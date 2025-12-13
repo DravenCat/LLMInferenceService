@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from "react";
-
+import React, { useEffect, useRef, useState } from "react";
+import styles from "./ModelSelector.module.css";
 
 const ModelSelector = ({ model, setModel, models, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,15 +18,15 @@ const ModelSelector = ({ model, setModel, models, disabled }) => {
   const selectedModel = models.find((m) => m.id === model);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className={styles.container} ref={menuRef}>
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-stone-700/50 hover:bg-stone-700 text-xs text-stone-400 hover:text-stone-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className={styles.trigger}
       >
         <span>{selectedModel?.name}</span>
         <svg
-          className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`${styles.triggerIcon} ${isOpen ? styles.open : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -37,7 +37,7 @@ const ModelSelector = ({ model, setModel, models, disabled }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 py-1 bg-stone-800 border border-stone-700 rounded-lg shadow-xl min-w-[120px] z-10">
+        <div className={styles.dropdown}>
           {models.map((m) => (
             <button
               key={m.id}
@@ -45,9 +45,7 @@ const ModelSelector = ({ model, setModel, models, disabled }) => {
                 setModel(m.id);
                 setIsOpen(false);
               }}
-              className={`w-full px-3 py-2 text-left text-sm hover:bg-stone-700 transition-colors ${
-                m.id === model ? "text-amber-400" : "text-stone-300"
-              }`}
+              className={`${styles.option} ${m.id === model ? styles.selected : ""}`}
             >
               {m.name}
             </button>
@@ -57,6 +55,5 @@ const ModelSelector = ({ model, setModel, models, disabled }) => {
     </div>
   );
 };
-
 
 export default ModelSelector;
