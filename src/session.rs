@@ -169,12 +169,4 @@ impl SessionHelper {
 
         true
     }
-
-
-    pub async fn clear_history(manager: &SessionManager, session_id: &str) {
-        let mut sessions = manager.write().await;
-        if let Some(session) = sessions.get_mut(session_id) {
-            session.clear();
-        }
-    }
 }
