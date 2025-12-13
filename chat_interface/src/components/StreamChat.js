@@ -107,6 +107,8 @@ const StreamingChat = () => {
     const typeMap = {
       pdf: "PDF",
       docx: "Word Document",
+      pptx: "PowerPoint",
+      xlsx: "Excel Spreadsheet",
       txt: "Text File",
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
@@ -316,7 +318,7 @@ const StreamingChat = () => {
   const handleDeleteSession = async (sessionId) => {
     // 调用后端删除会话
     try {
-      await fetch(`http://localhost:8080/sessions/${sessionId}`, {
+      await fetch(`http://localhost:8080/session/${sessionId}`, {
         method: "DELETE",
       });
     } catch (e) {
@@ -515,7 +517,7 @@ const StreamingChat = () => {
           </div>
 
           <p className={styles.footerHint}>
-            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx
+            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx, xlsx
           </p>
         </div>
       </footer>

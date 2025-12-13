@@ -51,6 +51,14 @@
     color: #60a5fa;
   }
 
+  &.pptx {
+    color: #fb923c;
+  }
+
+  &.xlsx {
+    color: #4ade80;
+  }
+
   &.txt {
     color: #a8a29e;
   }

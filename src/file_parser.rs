@@ -10,6 +10,9 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
+use calamine::{open_workbook, Reader, Xlsx,
+               Data
+};
 use tokio::sync::RwLock;
 
 pub type FileCache = Arc<RwLock<HashMap<String, CacheFile>>>;
@@ -29,7 +32,8 @@ pub enum FileType {
     TXT,
     PDF,
     DOCX,
-    PPTX
+    PPTX,
+    XLSX
 }
 
 impl FileType {
@@ -39,6 +43,7 @@ impl FileType {
             "pdf" => Some(FileType::PDF),
             "docx" => Some(FileType::DOCX),
             "pptx" => Some(FileType::PPTX),
+            "xlsx" => Some(FileType::XLSX),
             _ => None,
         }
     }
@@ -58,6 +63,7 @@ pub async fn parse_file(path: &Path, file_bytes: &[u8]) -> Result<String> {
         FileType::PDF => parse_pdf(&temp_file).await,
         FileType::DOCX => parse_docx(&temp_file).await,
         FileType::PPTX => parse_pptx(&temp_file).await,
+        FileType::XLSX => parse_xlsx(&temp_file).await,
     };
 
     let _ = tokio::fs::remove_file(&temp_file).await;
@@ -282,6 +288,80 @@ fn strip_markdown(md: &str) -> String {
 }
 
 
+async fn parse_xlsx(path: &Path) -> Result<String> {
+    let mut workbook: Xlsx<_> = open_workbook(path)?;
+    let mut text_content = String::new();
+
+
+    let sheet_names = workbook.sheet_names().to_owned();
+
+    for sheet_name in sheet_names {
+
+        text_content.push_str(&format!("--- Sheet: {} ---\n", sheet_name));
+
+        if let Ok(range) = workbook.worksheet_range(&sheet_name) {
+            for row in range.rows() {
+                let row_text: Vec<String> = row
+                    .iter()
+                    .map(|cell| cell_to_string(cell))
+                    .collect();
+
+
+                if row_text.iter().all(|s| s.is_empty()) {
+                    continue;
+                }
+
+
+                text_content.push_str(&row_text.join("\t"));
+                text_content.push('\n');
+            }
+        }
+
+        text_content.push('\n');
+    }
+
+
+    let cleaned: String = text_content
+        .lines()
+        .map(|line| line.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string();
+
+    Ok(cleaned)
+}
+
+
+fn cell_to_string(cell: &Data) -> String {
+    match cell {
+        Data::Empty => String::new(),
+        Data::String(s) => s.clone(),
+        Data::Float(f) => {
+            // 如果是整数，不显示小数点
+            if f.fract() == 0.0 {
+                format!("{}", *f as i64)
+            } else {
+                format!("{}", f)
+            }
+        }
+        Data::Int(i) => i.to_string(),
+        Data::Bool(b) => if *b { "TRUE" } else { "FALSE" }.to_string(),
+        Data::DateTime(dt) => {
+            // 使用 ExcelDateTime 的 as_datetime 方法
+            if let Some(datetime) = dt.as_datetime() {
+                datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+            } else {
+                format!("{:?}", dt)
+            }
+        }
+        Data::DateTimeIso(s) => s.clone(),
+        Data::DurationIso(s) => s.clone(),
+        Data::Error(e) => format!("#ERR:{:?}", e),
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,6 +372,18 @@ mod tests {
         assert_eq!(FileType::from_extension("PDF"), Some(FileType::PDF));
         assert_eq!(FileType::from_extension("docx"), Some(FileType::DOCX));
         assert_eq!(FileType::from_extension("PPTX"), Some(FileType::PPTX));
+        assert_eq!(FileType::from_extension("XLSX"), Some(FileType::XLSX));
         assert_eq!(FileType::from_extension("jpg"), None);
+    }
+
+    #[test]
+    fn test_cell_to_string() {
+        assert_eq!(cell_to_string(&Data::Empty), "");
+        assert_eq!(cell_to_string(&Data::String("hello".to_string())), "hello");
+        assert_eq!(cell_to_string(&Data::Int(42)), "42");
+        assert_eq!(cell_to_string(&Data::Float(3.14)), "3.14");
+        assert_eq!(cell_to_string(&Data::Float(100.0)), "100");
+        assert_eq!(cell_to_string(&Data::Bool(true)), "TRUE");
+        assert_eq!(cell_to_string(&Data::Bool(false)), "FALSE");
     }
 }

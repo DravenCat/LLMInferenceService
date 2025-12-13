@@ -174,7 +174,7 @@ pub async fn upload_handler(
         .and_then(|s| s.to_str())
         .unwrap_or("");
 
-    let allowed_extension = vec!["txt", "pdf", "docx", "pptx"];
+    let allowed_extension = vec!["txt", "pdf", "docx", "pptx", "xlsx"];
     if !allowed_extension.contains(&extension.to_lowercase().as_str()) {
         return Err((
             StatusCode::BAD_REQUEST,

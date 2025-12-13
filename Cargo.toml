@@ -27,6 +27,7 @@ uuid = "1.19.0"
 pdf = "0.9.0"
 docx-rs = "0.4.18"
 pptx-to-md = "0.4.0"
+calamine = { version = "0.32.0", features = ["chrono"] }
 
 # --- Logging ---
 tracing = "0.1"
