@@ -2,6 +2,7 @@ use anyhow::Result;
 use docx_rs::{
     DocumentChild, ParagraphChild, RunChild, TableCellContent, TableChild, TableRowChild,
 };
+use pptx_to_md::{PptxContainer, ParserConfig};
 use pdf::{content::*, file::FileOptions};
 use std::collections::HashMap;
 use std::env::temp_dir;
@@ -28,6 +29,7 @@ pub enum FileType {
     TXT,
     PDF,
     DOCX,
+    PPTX
 }
 
 impl FileType {
@@ -36,6 +38,7 @@ impl FileType {
             "txt" => Some(FileType::TXT),
             "pdf" => Some(FileType::PDF),
             "docx" => Some(FileType::DOCX),
+            "pptx" => Some(FileType::PPTX),
             _ => None,
         }
     }
@@ -54,6 +57,7 @@ pub async fn parse_file(path: &Path, file_bytes: &[u8]) -> Result<String> {
         FileType::TXT => parse_txt(&temp_file).await,
         FileType::PDF => parse_pdf(&temp_file).await,
         FileType::DOCX => parse_docx(&temp_file).await,
+        FileType::PPTX => parse_pptx(&temp_file).await,
     };
 
     let _ = tokio::fs::remove_file(&temp_file).await;
@@ -201,5 +205,93 @@ fn extract_text_from_paragraph_child(child: &ParagraphChild, output: &mut String
             }
         }
         _ => {}
+    }
+}
+
+
+async fn parse_pptx(path: &Path) -> Result<String> {
+    let config = ParserConfig::builder()
+        .extract_images(false)
+        .include_slide_comment(false)
+        .build();
+
+    let mut pptx_container = PptxContainer::open(path, config)?;
+    let slides = pptx_container.parse_all()?;
+
+    let mut text_content = String::new();
+
+    for (i, slide) in slides.iter().enumerate() {
+
+        text_content.push_str(&format!("--- Slide {} ---\n", i + 1));
+
+
+        if let Some(md_content) = slide.convert_to_md() {
+
+            let plain_text = strip_markdown(&md_content);
+            text_content.push_str(&plain_text);
+        }
+
+        text_content.push_str("\n\n");
+    }
+
+    let cleaned: String = text_content
+        .lines()
+        .map(|line| line.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string();
+
+    Ok(cleaned)
+}
+
+
+fn strip_markdown(md: &str) -> String {
+    let mut result = String::new();
+
+    for line in md.lines() {
+        let line = line.trim();
+
+        if line.starts_with("![") {
+            continue;
+        }
+
+        let line = line.trim_start_matches('#').trim();
+
+        let line = line.replace("**", "").replace("__", "");
+        let line = line.replace("*", "").replace("_", "");
+
+        let line =
+            if line.starts_with("- ") || line.starts_with("* ") {
+                &line[2..]
+            } else if line.chars().next().map_or(false, |c| c.is_ascii_digit())
+                && line.contains(". ")
+            {
+                line.split_once(". ").map_or(&line[..], |(_, rest)| rest)
+            } else {
+                &line[..]
+            };
+
+        if !line.is_empty() {
+            result.push_str(line);
+            result.push('\n');
+        }
+    }
+
+    result
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_type_detection() {
+        assert_eq!(FileType::from_extension("txt"), Some(FileType::TXT));
+        assert_eq!(FileType::from_extension("PDF"), Some(FileType::PDF));
+        assert_eq!(FileType::from_extension("docx"), Some(FileType::DOCX));
+        assert_eq!(FileType::from_extension("PPTX"), Some(FileType::PPTX));
+        assert_eq!(FileType::from_extension("jpg"), None);
     }
 }

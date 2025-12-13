@@ -11,7 +11,7 @@ const FileUpload = forwardRef(({
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const allowedExtensions = [".txt", ".pdf", ".docx"];
+  const allowedExtensions = [".txt", ".pdf", ".docx", ".pptx"];
 
   useImperativeHandle(ref, () => ({
     trigger: () => fileInputRef.current?.click()
@@ -44,6 +44,7 @@ const FileUpload = forwardRef(({
       pdf: "PDF",
       docx: "Word Document",
       txt: "Text File",
+      pptx: "Power Point File"
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };

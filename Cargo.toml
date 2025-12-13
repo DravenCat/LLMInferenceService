@@ -26,11 +26,8 @@ async-stream = "0.3"
 uuid = "1.19.0"
 pdf = "0.9.0"
 docx-rs = "0.4.18"
+pptx-to-md = "0.4.0"
 
 # --- Logging ---
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
-
-# --- Burn (keep original project functionality) ---
-burn = { version = "0.19.1", features = ["wgpu"] }
-burn-wgpu = "0.19.1"
