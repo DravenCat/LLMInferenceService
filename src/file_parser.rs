@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::env::temp_dir;
-use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use std::fs::File;
 use std::io::Read;
+use anyhow::Result;
 use pdf::{
     file::FileOptions,
     content::*,
@@ -50,14 +50,14 @@ impl FileType {
 }
 
 
-pub async fn parse_file(path: &Path, file_bytes : &[u8]) -> String {
+pub async fn parse_file(path: &Path, file_bytes : &[u8]) -> Result<String> {
     let extension = path.extension().unwrap().to_str().unwrap();
 
     let file_type = FileType::from_extension(extension).unwrap();
 
     let temp_dir = temp_dir();
     let temp_file = temp_dir.join(format!("upload_{}.{}", uuid::Uuid::new_v4(), extension));
-    fs::write(&temp_file, file_bytes).unwrap();
+    tokio::fs::write(&temp_file, file_bytes).await?;
 
     let result = match file_type {
         FileType::TXT => parse_txt(&temp_file).await,
@@ -65,20 +65,20 @@ pub async fn parse_file(path: &Path, file_bytes : &[u8]) -> String {
         FileType::DOCX => parse_docx(&temp_file).await,
     };
 
-    fs::remove_file(&temp_file).unwrap();
+    let _ = tokio::fs::remove_file(&temp_file).await;
 
     result
 }
 
 
-async fn parse_txt(path: &Path) -> String {
-    let content = fs::read_to_string(path).unwrap();
-    content
+async fn parse_txt(path: &Path) -> Result<String> {
+    let content = tokio::fs::read_to_string(path).await?;
+    Ok(content)
 }
 
 
-async fn parse_pdf(path: &Path) -> String {
-    let file = FileOptions::cached().open(path).unwrap();
+async fn parse_pdf(path: &Path) -> Result<String> {
+    let file = FileOptions::cached().open(path)?;
     let resolver = file.resolver();
     let mut text_content = String::new();
 
@@ -121,16 +121,16 @@ async fn parse_pdf(path: &Path) -> String {
         .collect::<Vec<_>>()
         .join("\n");
 
-    cleaned
+    Ok(cleaned)
 }
 
 
-async fn parse_docx(path: &Path) -> String {
-    let mut file = File::open(path).unwrap();
+async fn parse_docx(path: &Path) -> Result<String> {
+    let mut file = File::open(path)?;
     let mut buf = Vec::new();
-    file.read_to_end(&mut buf).unwrap();
+    file.read_to_end(&mut buf)?;
 
-    let docx = docx_rs::read_docx(&buf).unwrap();
+    let docx = docx_rs::read_docx(&buf)?;
     let mut text_content = String::new();
 
     // 遍历文档中的所有子元素
@@ -147,7 +147,7 @@ async fn parse_docx(path: &Path) -> String {
         .trim()
         .to_string();
 
-    cleaned
+    Ok(cleaned)
 }
 
 
