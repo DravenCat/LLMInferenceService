@@ -10,12 +10,6 @@ pub struct UnsupportedFileError {
 #[derive(Serialize)]
 pub struct RemoveFileError {
     pub error: String,
-    pub file_name: String,
+    pub file_id: String,
 }
 
-
-#[derive(Serialize)]
-pub struct UploadFileError {
-    pub error: String,
-    pub file_name: String,
-}

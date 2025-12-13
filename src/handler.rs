@@ -171,7 +171,7 @@ pub async fn remove_handler(State(state): State<AppState>,
             return Err((StatusCode::BAD_REQUEST,
                 Json(RemoveFileError {
                 error : "File does not exist".to_string(),
-                file_name
+                file_id : file_id.to_string()
             })))
         }
     }
