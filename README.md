@@ -110,9 +110,41 @@ The service exposes HTTP endpoints for sending user's text prompts and receiving
 #### Hardware
 
 #### Software
-### Installation Steps
 
-### Model Preparation(Optional)
+### Installation Steps
+#### Clone the Respository
+    git clone https://github.com/DravenCat/LLMInferenceService.git
+    cd LLMInferenceService
+#### Install Rust
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    rustup default stable
+#### Verify
+    rustc --version
+    cargo --version
+### Model Preparation
+There is a default lazy model loading process built into the project.
+But you always have the option to download the GGUF model file to your local machine manually. Here are the model types used and their naming:
+#### Qwen
+
+Model: Qwen2.5-3B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/Qwen2.5-3B-Instruct-GGUF --include "Qwen2.5-3B-Instruct-Q4_K_M.gguf" --local-dir models/
+#### SmoILM2
+
+Model: SmolLM2-1.7B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/SmolLM2-1.7B-Instruct-GGUF --include "*.gguf" --local-dir models/smollm2
+#### llama
+
+Model: Meta-Llama-3.1-8B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --include "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf" --local-dir models/llama8b
 
 ## Reproducibility Guide
 
