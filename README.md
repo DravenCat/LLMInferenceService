@@ -180,7 +180,10 @@ In case it does not work, try
 
 first. And then try to start the chat GUI again.
 
-✨💬You can now start interacting with the LLM inference service!!🤖✨
+If the chat GUI is loaded successfully, you can see a webpage like this open:
+<img width="1000" height="600" alt="image" src="https://github.com/user-attachments/assets/b96988f6-eeaa-4569-8155-effe6bcae9d8" />
+
+✨💬You can now start interacting with the LLM inference service!!🤖✨ Have fun !!
 
 ## Reproducibility Guide
 
