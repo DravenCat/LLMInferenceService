@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::session::ChatMessage;
 
 #[derive(Deserialize)]
 pub struct InferenceRequest {
@@ -36,4 +37,30 @@ pub struct DeleteResponse {
 pub struct RemoveSessionResponse {
     pub session_id: String,
     pub cleared: bool,
+}
+
+
+// 获取 session 的响应
+#[derive(Serialize)]
+pub struct GetSessionResponse {
+    pub session_id: String,
+    pub messages: Vec<ChatMessage>,
+    pub exists: bool,
+}
+
+
+// 同步 session 的请求
+#[derive(Deserialize)]
+pub struct SyncSessionRequest {
+    pub session_id: String,
+    pub messages: Vec<ChatMessage>,
+}
+
+
+// 同步 session 的响应
+#[derive(Serialize)]
+pub struct SyncSessionResponse {
+    pub session_id: String,
+    pub synced: bool,
+    pub message_count: usize,
 }

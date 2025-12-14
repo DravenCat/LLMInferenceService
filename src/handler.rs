@@ -15,7 +15,8 @@ use crate::AppState;
 use crate::error::{RemoveFileError, RemoveSessionError, UnsupportedFileError};
 use crate::file_parser::{parse_file, CacheFile};
 use crate::types::{
-    DeleteResponse, InferenceRequest, InferenceResponse, RemoveSessionResponse, UploadResponse
+    DeleteResponse, InferenceRequest, InferenceResponse, RemoveSessionResponse, UploadResponse,
+    GetSessionResponse, SyncSessionRequest, SyncSessionResponse
 };
 use crate::mistral_runner::{run_inference_collect, run_inference_stream};
 use crate::session::{ChatMessage, SessionConfig, SessionHelper};
@@ -347,6 +348,64 @@ pub async fn remove_session_handler(State(state): State<AppState>,
 }
 
 
+/// 获取 session 信息
+pub async fn get_session_handler(
+    State(state): State<AppState>,
+    axum::extract::Path(session_id): axum::extract::Path<String>
+) -> Json<GetSessionResponse> {
+    match SessionHelper::get(&state.session_manager, &session_id).await {
+        Some(session) => {
+            Json(GetSessionResponse {
+                session_id,
+                messages: session.messages,
+                exists: true,
+            })
+        }
+        None => {
+            Json(GetSessionResponse {
+                session_id,
+                messages: vec![],
+                exists: false,
+            })
+        }
+    }
+}
+
+
+/// 同步 session 消息（前端切换 session 时调用）
+pub async fn sync_session_handler(
+    State(state): State<AppState>,
+    Json(req): Json<SyncSessionRequest>
+) -> Json<SyncSessionResponse> {
+    let config = SessionConfig::default();
+    
+    // 过滤掉前端消息中可能存在的文件信息，只保留 role 和 content
+    let messages: Vec<ChatMessage> = req.messages.into_iter().map(|msg| {
+        ChatMessage {
+            role: msg.role,
+            content: msg.content,
+        }
+    }).collect();
+    
+    let message_count = messages.len();
+    
+    let session = SessionHelper::sync_messages(
+        &state.session_manager,
+        &req.session_id,
+        messages,
+        config,
+    ).await;
+    
+    println!("Session {} synced with {} messages", req.session_id, session.messages.len());
+    
+    Json(SyncSessionResponse {
+        session_id: req.session_id,
+        synced: true,
+        message_count,
+    })
+}
+
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/generate", post(infer_handler))
@@ -355,4 +414,6 @@ pub fn routes() -> Router<AppState> {
         .route("/upload", post(upload_handler))
         .route("/files/{file_id}", delete(remove_handler))
         .route("/sessions/{session_id}", delete(remove_session_handler))
+        .route("/sessions/{session_id}", get(get_session_handler))
+        .route("/sessions/sync", post(sync_session_handler))
 }

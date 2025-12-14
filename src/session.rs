@@ -146,6 +146,34 @@ impl SessionHelper {
             .clone()
     }
 
+    /// 获取 session（如果存在）
+    pub async fn get(manager: &SessionManager, session_id: &str) -> Option<Session> {
+        let sessions = manager.read().await;
+        sessions.get(session_id).cloned()
+    }
+
+    /// 同步 session 消息（从前端恢复历史）
+    pub async fn sync_messages(
+        manager: &SessionManager,
+        session_id: &str,
+        messages: Vec<ChatMessage>,
+        config: SessionConfig,
+    ) -> Session {
+        let mut sessions = manager.write().await;
+        
+        // 创建或更新 session
+        let session = sessions.entry(session_id.to_string())
+            .or_insert_with(|| Session::new(session_id.to_string(), config.clone()));
+        
+        // 替换消息历史
+        session.messages = messages;
+        
+        // 应用消息数量限制
+        session.config = config;
+        session.trim_history();
+        
+        session.clone()
+    }
 
     pub async fn update(manager: &SessionManager, session: Session) {
         let mut sessions = manager.write().await;

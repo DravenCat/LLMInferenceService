@@ -48,7 +48,7 @@ Our team is motivated to build this project because it addresses a real need in 
 
     - Server-sent events (SSE) for token-by-token streaming
 
-- Basic Chat Interface
+- Chat Interface
 
     - Web-based UI to interact with the inference service
 
@@ -62,6 +62,11 @@ Our team is motivated to build this project because it addresses a real need in 
 
     - Ability to remove any uploaded file
 
+- Contextual Memory
+
+
+- Session Management
+
 Novelty: While several LLM serving solutions exist in Python, a Rust-native implementation focusing on performance, safety, and ease of use represents a gap in the current ecosystem. Our solution will leverage Rust's strengths to provide better resource utilization and lower latency compared to existing alternatives.
 
 
@@ -73,6 +78,7 @@ Novelty: While several LLM serving solutions exist in Python, a Rust-native impl
     - Main entrance
     - Http handler layer
     - File parser layer
+    - Contextual memory and session 
 - Frontend React interface
 
 ### Wanrou Zhang

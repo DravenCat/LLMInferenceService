@@ -383,13 +383,34 @@ const StreamingChat = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleSelectSession = (sessionId) => {
+  const handleSelectSession = async (sessionId) => {
     const session = sessions.find((s) => s.id === sessionId);
     if (session) {
       setMessages(session.messages || []);
       setCurrentSessionId(sessionId);
       setAttachedFiles([]);
       setInput("");
+      
+      // 同步 session 到后端
+      try {
+        // 转换消息格式，只保留 role 和 content
+        const messagesToSync = (session.messages || []).map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+        
+        await fetch("http://localhost:8080/sessions/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            messages: messagesToSync,
+          }),
+        });
+        console.log(`Session ${sessionId} synced with backend`);
+      } catch (e) {
+        console.error("Failed to sync session with backend:", e);
+      }
     }
     setIsSidebarOpen(false);
   };
