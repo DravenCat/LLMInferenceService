@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 
-/// 单条消息
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: MessageRole,
@@ -18,7 +18,7 @@ pub enum MessageRole {
     System,
 }
 
-/// 会话配置
+
 #[derive(Clone)]
 pub struct SessionConfig {
 
