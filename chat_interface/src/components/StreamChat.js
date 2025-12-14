@@ -105,11 +105,64 @@ const StreamingChat = () => {
   const getFileTypeName = (filename) => {
     const ext = filename?.split(".").pop().toLowerCase();
     const typeMap = {
+      // 文档
       pdf: "PDF",
       docx: "Word Document",
       pptx: "PowerPoint",
       xlsx: "Excel Spreadsheet",
       txt: "Text File",
+      // Markdown
+      md: "Markdown",
+      markdown: "Markdown",
+      // 代码 - Web/脚本
+      py: "Python",
+      js: "JavaScript",
+      ts: "TypeScript",
+      jsx: "React JSX",
+      tsx: "React TSX",
+      vue: "Vue Component",
+      svelte: "Svelte",
+      // 代码 - 系统/JVM
+      rs: "Rust",
+      go: "Go",
+      java: "Java",
+      kt: "Kotlin",
+      scala: "Scala",
+      // 代码 - C/C++
+      c: "C",
+      cpp: "C++",
+      h: "C Header",
+      hpp: "C++ Header",
+      // 代码 - .NET
+      cs: "C#",
+      fs: "F#",
+      // 代码 - 动态语言
+      rb: "Ruby",
+      php: "PHP",
+      // 代码 - Apple
+      swift: "Swift",
+      // Shell
+      sh: "Shell Script",
+      bash: "Bash Script",
+      ps1: "PowerShell",
+      // 数据库
+      sql: "SQL",
+      graphql: "GraphQL",
+      // Web 前端
+      html: "HTML",
+      css: "CSS",
+      scss: "SCSS",
+      // 配置文件
+      json: "JSON",
+      yaml: "YAML",
+      yml: "YAML",
+      toml: "TOML",
+      xml: "XML",
+      ini: "INI Config",
+      // 其他
+      log: "Log File",
+      env: "Environment",
+      dockerfile: "Dockerfile",
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };
@@ -517,7 +570,7 @@ const StreamingChat = () => {
           </div>
 
           <p className={styles.footerHint}>
-            Enter to send · Shift + Enter for new line · Supports txt, pdf, docx, pptx, xlsx
+            Enter to send · Shift + Enter for new line · Supports documents, code files, and more
           </p>
         </div>
       </footer>

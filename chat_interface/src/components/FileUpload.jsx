@@ -11,7 +11,30 @@ const FileUpload = forwardRef(({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const allowedExtensions = [".txt", ".pdf", ".docx", ".pptx", ".xlsx"];
+  const allowedExtensions = [
+    // 文档
+    ".txt", ".pdf", ".docx", ".pptx", ".xlsx",
+    // Markdown
+    ".md", ".markdown",
+    // 代码文件
+    ".py", ".js", ".ts", ".jsx", ".tsx", ".vue", ".svelte",
+    ".rs", ".go", ".java", ".kt", ".scala",
+    ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx",
+    ".cs", ".fs",
+    ".rb", ".php", ".pl", ".pm",
+    ".swift", ".m", ".mm",
+    ".r", ".jl",
+    ".lua", ".tcl", ".awk", ".sed",
+    ".hs", ".ml", ".elm", ".clj", ".cljs", ".ex", ".exs",
+    ".sh", ".bash", ".zsh", ".fish", ".bat", ".cmd", ".ps1",
+    ".sql", ".prisma", ".graphql", ".gql",
+    ".html", ".htm", ".css", ".scss", ".sass", ".less",
+    ".xml", ".xsl", ".xslt",
+    ".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+    ".log", ".env",
+    ".makefile", ".cmake", ".dockerfile",
+    ".gitignore", ".editorconfig",
+  ];
 
   useImperativeHandle(ref, () => ({
     trigger: () => fileInputRef.current?.click()
@@ -34,11 +57,102 @@ const FileUpload = forwardRef(({
   const getFileTypeName = (filename) => {
     const ext = filename?.split(".").pop().toLowerCase();
     const typeMap = {
+      // 文档
       pdf: "PDF",
       docx: "Word Document",
       pptx: "PowerPoint",
       xlsx: "Excel Spreadsheet",
       txt: "Text File",
+      // Markdown
+      md: "Markdown",
+      markdown: "Markdown",
+      // 代码 - Web/脚本
+      py: "Python",
+      js: "JavaScript",
+      ts: "TypeScript",
+      jsx: "React JSX",
+      tsx: "React TSX",
+      vue: "Vue Component",
+      svelte: "Svelte",
+      // 代码 - 系统/JVM
+      rs: "Rust",
+      go: "Go",
+      java: "Java",
+      kt: "Kotlin",
+      scala: "Scala",
+      // 代码 - C/C++
+      c: "C",
+      cpp: "C++",
+      cc: "C++",
+      cxx: "C++",
+      h: "C Header",
+      hpp: "C++ Header",
+      hxx: "C++ Header",
+      // 代码 - .NET
+      cs: "C#",
+      fs: "F#",
+      // 代码 - 动态语言
+      rb: "Ruby",
+      php: "PHP",
+      pl: "Perl",
+      pm: "Perl Module",
+      // 代码 - Apple
+      swift: "Swift",
+      m: "Objective-C",
+      mm: "Objective-C++",
+      // 代码 - 数据科学
+      r: "R",
+      jl: "Julia",
+      // 代码 - 脚本
+      lua: "Lua",
+      // 代码 - 函数式
+      hs: "Haskell",
+      ml: "OCaml",
+      elm: "Elm",
+      clj: "Clojure",
+      cljs: "ClojureScript",
+      ex: "Elixir",
+      exs: "Elixir Script",
+      // Shell
+      sh: "Shell Script",
+      bash: "Bash Script",
+      zsh: "Zsh Script",
+      fish: "Fish Script",
+      bat: "Batch File",
+      cmd: "CMD Script",
+      ps1: "PowerShell",
+      // 数据库
+      sql: "SQL",
+      prisma: "Prisma Schema",
+      graphql: "GraphQL",
+      gql: "GraphQL",
+      // Web 前端
+      html: "HTML",
+      htm: "HTML",
+      css: "CSS",
+      scss: "SCSS",
+      sass: "Sass",
+      less: "Less",
+      // 标记语言
+      xml: "XML",
+      xsl: "XSLT",
+      xslt: "XSLT",
+      // 配置文件
+      json: "JSON",
+      yaml: "YAML",
+      yml: "YAML",
+      toml: "TOML",
+      ini: "INI Config",
+      cfg: "Config File",
+      conf: "Config File",
+      // 其他
+      log: "Log File",
+      env: "Environment",
+      makefile: "Makefile",
+      cmake: "CMake",
+      dockerfile: "Dockerfile",
+      gitignore: "Git Ignore",
+      editorconfig: "Editor Config",
     };
     return typeMap[ext] || ext?.toUpperCase() || "File";
   };

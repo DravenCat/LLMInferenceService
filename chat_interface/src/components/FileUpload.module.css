@@ -62,6 +62,82 @@
   &.txt {
     color: #a8a29e;
   }
+
+  &.md, &.markdown {
+    color: #a78bfa;
+  }
+
+  &.py {
+    color: #fbbf24;
+  }
+
+  &.js, &.jsx {
+    color: #facc15;
+  }
+
+  &.ts, &.tsx {
+    color: #3b82f6;
+  }
+
+  &.rs {
+    color: #f97316;
+  }
+
+  &.go {
+    color: #06b6d4;
+  }
+
+  &.java {
+    color: #ef4444;
+  }
+
+  &.c, &.cpp, &.cc, &.cxx, &.h, &.hpp, &.hxx {
+    color: #60a5fa;
+  }
+
+  &.rb {
+    color: #dc2626;
+  }
+
+  &.php {
+    color: #8b5cf6;
+  }
+
+  &.swift {
+    color: #f97316;
+  }
+
+  &.html, &.htm {
+    color: #f97316;
+  }
+
+  &.css, &.scss, &.sass, &.less {
+    color: #3b82f6;
+  }
+
+  &.json {
+    color: #fbbf24;
+  }
+
+  &.yaml, &.yml {
+    color: #ef4444;
+  }
+
+  &.xml {
+    color: #22c55e;
+  }
+
+  &.sql {
+    color: #06b6d4;
+  }
+
+  &.sh, &.bash, &.zsh, &.fish {
+    color: #22c55e;
+  }
+
+  &.log {
+    color: #78716c;
+  }
 }
 
 .fileInfo {

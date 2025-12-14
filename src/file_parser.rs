@@ -21,6 +21,7 @@ pub type FileCache = Arc<RwLock<HashMap<String, CacheFile>>>;
 pub struct CacheFile {
     pub filename: String,
     pub content: String,
+    pub extension : String,
 }
 
 pub fn new_file_cache() -> FileCache {
@@ -33,7 +34,9 @@ pub enum FileType {
     PDF,
     DOCX,
     PPTX,
-    XLSX
+    XLSX,
+    CODE,
+    MD,
 }
 
 impl FileType {
@@ -44,6 +47,29 @@ impl FileType {
             "docx" => Some(FileType::DOCX),
             "pptx" => Some(FileType::PPTX),
             "xlsx" => Some(FileType::XLSX),
+            "md" => Some(FileType::MD),
+
+            // code
+            "py" | "js" | "ts" | "jsx" | "tsx" | "vue" | "svelte" |     // Web
+            "rs" |                                                      // Rust
+            "go" |                                                      // go
+            "java" | "kt" | "scala" |                                   // java
+            "c" | "cpp" | "cc" | "cxx" | "h" | "hpp" | "hxx" |          // C/C++
+            "cs" | "fs" |                                               // .NET
+            "rb" | "php" | "pl" | "pm" |                                // php
+            "swift" | "m" | "mm" |                                      // Apple
+            "r" | "R" | "jl" |                                          // data science
+            "lua" | "tcl" | "awk" | "sed" |                             // Script
+            "hs" | "ml" | "elm" | "clj" | "cljs" | "ex" | "exs" |       // function
+            "sh" | "bash" | "zsh" | "fish" | "bat" | "cmd" | "ps1" |    // Shell
+            "sql" | "prisma" | "graphql" | "gql" |                      // database
+            "html" | "htm" | "css" | "scss" | "sass" | "less" |         // Web page
+            "xml" | "xsl" | "xslt" |                                    // XML
+            "json" | "yaml" | "yml" | "toml" | "ini" | "cfg" | "conf" | // config
+            "log" | "env" |                                             // log
+            "makefile" | "cmake" | "dockerfile" |                       // build
+            "gitignore" | "editorconfig"                                // git
+            => Some(FileType::CODE),
             _ => None,
         }
     }
@@ -59,11 +85,13 @@ pub async fn parse_file(path: &Path, file_bytes: &[u8]) -> Result<String> {
     tokio::fs::write(&temp_file, file_bytes).await?;
 
     let result = match file_type {
-        FileType::TXT => parse_txt(&temp_file).await,
+        FileType::TXT => parse_directly(&temp_file).await,
         FileType::PDF => parse_pdf(&temp_file).await,
         FileType::DOCX => parse_docx(&temp_file).await,
         FileType::PPTX => parse_pptx(&temp_file).await,
         FileType::XLSX => parse_xlsx(&temp_file).await,
+        FileType::CODE => parse_directly(&temp_file).await,
+        FileType::MD => parse_directly(&temp_file).await
     };
 
     let _ = tokio::fs::remove_file(&temp_file).await;
@@ -71,7 +99,7 @@ pub async fn parse_file(path: &Path, file_bytes: &[u8]) -> Result<String> {
     result
 }
 
-async fn parse_txt(path: &Path) -> Result<String> {
+async fn parse_directly(path: &Path) -> Result<String> {
     let content = tokio::fs::read_to_string(path).await?;
     Ok(content)
 }

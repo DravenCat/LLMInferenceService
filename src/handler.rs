@@ -144,9 +144,76 @@ async fn build_prompt(state: &AppState, prompt: &String) -> String {
     let mut cache = state.file_cache.write().await;
     let mut final_prompt = String::new();
     for (_, value) in cache.iter() {
-        final_prompt.push_str(
-            format!("Content in {} : {}\n", value.filename, value.content)
-                .as_str());
+
+        match value.extension.as_str() {
+            "txt" => {
+                final_prompt.push_str(
+                    format!("Content in the text file {} : \n\
+                     {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "md" => {
+                final_prompt.push_str(
+                    format!("Content in the markdown file {} : \n\
+                     {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "pdf" => {
+                final_prompt.push_str(
+                    format!("Content in the PDF file {} : \n\
+                    {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "docx" => {
+                final_prompt.push_str(
+                    format!("Content in the Word Document file {} : \n\
+                    {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "pptx" => {
+                final_prompt.push_str(
+                    format!("Content in the Power Point slides file {} : \n\
+                    {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "xlsx" => {
+                final_prompt.push_str(
+                    format!("Content in the Excel spreadsheets file {} : \n\
+                    {}\n", value.filename, value.content)
+                        .as_str());
+            }
+            "py" | "js" | "ts" | "jsx" | "tsx" | "vue" | "svelte" |     // Web
+            "rs" |                                                      // Rust
+            "go" |                                                      // go
+            "java" | "kt" | "scala" |                                   // java
+            "c" | "cpp" | "cc" | "cxx" | "h" | "hpp" | "hxx" |          // C/C++
+            "cs" | "fs" |                                               // .NET
+            "rb" | "php" | "pl" | "pm" |                                // php
+            "swift" | "m" | "mm" |                                      // Apple
+            "r" | "R" | "jl" |                                          // data science
+            "lua" | "tcl" | "awk" | "sed" |                             // Script
+            "hs" | "ml" | "elm" | "clj" | "cljs" | "ex" | "exs" |       // function
+            "sh" | "bash" | "zsh" | "fish" | "bat" | "cmd" | "ps1" |    // Shell
+            "sql" | "prisma" | "graphql" | "gql" |                      // database
+            "html" | "htm" | "css" | "scss" | "sass" | "less" |         // Web page
+            "xml" | "xsl" | "xslt" |                                    // XML
+            "json" | "yaml" | "yml" | "toml" | "ini" | "cfg" | "conf" | // config
+            "log" | "env" |                                             // log
+            "makefile" | "cmake" | "dockerfile" |                       // build
+            "gitignore" | "editorconfig"                                // git
+            => {
+                final_prompt.push_str(
+                    format!("Content in the {} code file {} : \n\
+                    {}\n", value.extension, value.filename, value.content)
+                        .as_str());
+            }
+
+            _ => {
+                final_prompt.push_str(
+                    format!("Content in {} : {}\n", value.filename, value.content)
+                        .as_str());
+            }
+        }
     }
     cache.clear();
 
@@ -174,8 +241,30 @@ pub async fn upload_handler(
         .and_then(|s| s.to_str())
         .unwrap_or("");
 
-    let allowed_extension = vec!["txt", "pdf", "docx", "pptx", "xlsx"];
-    if !allowed_extension.contains(&extension.to_lowercase().as_str()) {
+    let allowed_text_file = vec!["txt", "pdf", "docx", "pptx", "xlsx", "md"];
+    let allowed_code_file = vec![
+            "py", "js", "ts", "jsx", "tsx", "vue", "svelte",      // Web
+            "rs",                                                 // Rust
+            "go",                                                 // go
+            "java", "kt", "scala",                                // java
+            "c", "cpp", "cc", "cxx", "h", "hpp", "hxx",           // C/C++
+            "cs", "fs",                                           // .NET
+            "rb", "php", "pl", "pm",                              // php
+            "swift", "m", "mm",                                   // Apple
+            "r", "R", "jl",                                       // data science
+            "lua", "tcl", "awk", "sed",                           // Script
+            "hs", "ml", "elm", "clj", "cljs", "ex", "exs",        // function
+            "sh", "bash", "zsh", "fish", "bat", "cmd", "ps1",     // Shell
+            "sql", "prisma", "graphql", "gql",                    // database
+            "html", "htm", "css", "scss", "sass", "less",         // Web page
+            "xml", "xsl", "xslt",                                 // XML
+            "json", "yaml", "yml", "toml", "ini", "cfg", "conf",  // config
+            "log", "env",                                         // log
+            "makefile", "cmake", "dockerfile",                    // build
+            "gitignore", "editorconfig"                           // git
+    ];
+    if !allowed_text_file.contains(&extension.to_lowercase().as_str())
+    && !allowed_code_file.contains(&extension.to_lowercase().as_str()){
         return Err((
             StatusCode::BAD_REQUEST,
             Json(UnsupportedFileError {
@@ -196,6 +285,7 @@ pub async fn upload_handler(
     let cache_file = CacheFile {
         filename: filename.clone(),
         content,
+        extension : extension.to_string(),
     };
     {
         let mut cache = state.file_cache.write().await;
