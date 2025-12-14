@@ -159,6 +159,24 @@ Example CLI:
 Name it as:
     
     Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+
+### Build and Run
+The default configuration uses **GPU acceleration** during inference.
+If you want to run the service using **CPU only**, update the dependency configuration in `Cargo.toml` as follows:
+
+    mistralrs = { git = "https://github.com/EricLBuehler/mistral.rs.git" }
+
+Build the project:
+
+    cargo run --release
+
+Then start the server:
+
+    ./target/release/LLMInferenceService
+
+Access the chat interface with the following steps:
+
+
 ## Reproducibility Guide
 
 ## Contributions
