@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ModelSelector from "./ModelSelector";
 import FileUpload from "./FileUpload";
 import Sidebar from "./Sidebar";
+import MessageContent from "./MessageContent";
 import styles from "./StreamChat.module.css";
 
 const StreamingChat = () => {
@@ -491,10 +492,11 @@ const StreamingChat = () => {
                       <div className={styles.avatarInner} />
                     </div>
                     <div className={styles.content}>
-                      {msg.content}
-                      {isStreaming && idx === messages.length - 1 && (
-                        <span className={styles.cursor}>▊</span>
-                      )}
+                      <MessageContent 
+                        content={msg.content} 
+                        isStreaming={isStreaming && idx === messages.length - 1}
+                        showCursor={isStreaming && idx === messages.length - 1}
+                      />
                     </div>
                   </div>
                 )}
