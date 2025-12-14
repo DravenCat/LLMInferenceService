@@ -100,14 +100,10 @@ This project represents a novel contribution to the Rust ecosystem, where existi
 This guide explains how to set up, run, and use the LLM Inference Service.
 
 This project provides a lightweight LLM inference service implemented in Rust, built on top of:
-
-    - Axum for the web API
-
-    - Tokio for async runtime
-
-    - MistralRS for local LLM inference (GGUF models)
-
-    - (Optional) CUDA acceleration for GPU inference
+- Axum for the web API
+- Tokio for async runtime
+- MistralRS for local LLM inference (GGUF models)
+- (Optional) CUDA acceleration for GPU inference
 
 The service exposes HTTP endpoints for sending user's text prompts and receiving model-generated responses.
 ### System requirements
