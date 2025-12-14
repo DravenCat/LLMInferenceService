@@ -58,8 +58,6 @@ To realize this vision, the project will focus on delivering the following key f
 
 This project represents a novel contribution to the Rust ecosystem, where existing LLM serving solutions are either experimental or lack the comprehensive feature set required for practical deployment. By delivering a performant, safe, and extensible foundation for LLM inference, we aim to demonstrate Rust’s viability as a first-class language for AI infrastructure while providing a tangible, open-source tool that can be extended for more complex AI-driven applications.
 
-
-
 ## Key Features:
 
 - Multi-Model Management
@@ -106,10 +104,6 @@ This project provides a lightweight LLM inference service implemented in Rust, b
 - (Optional) CUDA acceleration for GPU inference
 
 The service exposes HTTP endpoints for sending user's text prompts and receiving model-generated responses.
-### System requirements
-#### Hardware
-
-#### Software
 
 ### Installation Steps
 #### Clone the Repository
@@ -176,9 +170,26 @@ Then start the server:
 
 Access the chat interface with the following steps:
 
+Go to the ./chat_interface in Ubuntu(WSL on Windows) / in Linux, try to start the chat GUI using the command:
+
+    npm start
+
+In case it does not work, try 
+
+    npm install 
+
+first. And then try to start the chat GUI again.
+
+✨💬You can now start interacting with the LLM inference service!!🤖✨
 
 ## Reproducibility Guide
 
+### crates/libs required
+
+### Systems used to test our project
+- Powershell-windows
+- WSL on Windows 11
+  
 ## Contributions
 
 ### Dezhi Ren
