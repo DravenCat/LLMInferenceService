@@ -112,7 +112,7 @@ The service exposes HTTP endpoints for sending user's text prompts and receiving
 #### Software
 
 ### Installation Steps
-#### Clone the Respository
+#### Clone the Repository
     git clone https://github.com/DravenCat/LLMInferenceService.git
     cd LLMInferenceService
 #### Install Rust
@@ -131,6 +131,11 @@ Model: Qwen2.5-3B-Instruct (GGUF)
 Example CLI:
 
     huggingface-cli download bartowski/Qwen2.5-3B-Instruct-GGUF --include "Qwen2.5-3B-Instruct-Q4_K_M.gguf" --local-dir models/
+
+Name it as:
+
+    Qwen2.5-3B-Instruct-Q4_K_M.gguf
+    
 #### SmoILM2
 
 Model: SmolLM2-1.7B-Instruct (GGUF)
@@ -138,6 +143,11 @@ Model: SmolLM2-1.7B-Instruct (GGUF)
 Example CLI:
 
     huggingface-cli download bartowski/SmolLM2-1.7B-Instruct-GGUF --include "*.gguf" --local-dir models/smollm2
+
+Name it as:
+
+    SmolLM2-1.7B-Instruct-Q4_K_M.gguf
+    
 #### llama
 
 Model: Meta-Llama-3.1-8B-Instruct (GGUF)
@@ -146,6 +156,9 @@ Example CLI:
 
     huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --include "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf" --local-dir models/llama8b
 
+Name it as:
+    
+    Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
 ## Reproducibility Guide
 
 ## Contributions
