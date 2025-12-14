@@ -11,6 +11,7 @@ use std::{time::Duration};
 use std::path::Path;
 use axum::routing::delete;
 use reqwest::StatusCode;
+use tower_http::follow_redirect::policy::PolicyExt;
 use crate::AppState;
 use crate::error::{RemoveFileError, RemoveSessionError, UnsupportedFileError};
 use crate::file_parser::{parse_file, CacheFile};
@@ -54,7 +55,7 @@ pub async fn infer_stream_handler(
     Json(req): Json<InferenceRequest>,
 ) -> Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>
 {
-    print!("infer_stream_handler entered!");
+    println!("infer_stream_handler entered!");
     let (tx, rx) = tokio::sync::mpsc::channel::<String>(32);
 
     let model = req.model;
@@ -70,11 +71,24 @@ pub async fn infer_stream_handler(
         config
     ).await;
 
-    let prompt = build_prompt(&state, &user_prompt).await;
+    // 如果有文件，先添加文件内容作为单独的 user message
+    if let Some(file_context) = build_file_context(&state).await {
+        println!("Adding file context to session: {} bytes", file_context.len());
+        session.add_user_message(file_context);
+    }
+    
+    // 添加用户的实际 prompt
+    session.add_user_message(user_prompt);
 
-    session.add_user_message(prompt);
+    // 保存 session（包含文件内容和用户消息）
+    SessionHelper::update(&state.session_manager, session.clone()).await;
 
     let messages: Vec<ChatMessage> = session.get_messages().to_vec();
+    
+    println!("Total messages in session: {}", messages.len());
+    for (i, msg) in messages.iter().enumerate() {
+        println!("  Message {}: role={:?}, content_len={}", i, msg.role, msg.content.len());
+    }
 
     let session_manager = state.session_manager.clone();
     let session_id_clone = session_id.clone();
@@ -141,89 +155,86 @@ pub async fn infer_stream_handler(
 }
 
 
-async fn build_prompt(state: &AppState, prompt: &String) -> String {
+/// 构建文件内容的 prompt（如果有文件的话）
+async fn build_file_context(state: &AppState) -> Option<String> {
     let mut cache = state.file_cache.write().await;
-    let mut final_prompt = String::new();
+    
+    println!("build_file_context: cache size = {}", cache.len());
+    
+    if cache.is_empty() {
+        println!("build_file_context: no files in cache");
+        return None;
+    }
+    
+    let mut file_context = String::from("I'm sharing the following file(s) with you:\n\n");
+    
     for (_, value) in cache.iter() {
-
+        println!("build_file_context: processing file {} ({}), content_len={}", 
+            value.filename, value.extension, value.content.len());
         match value.extension.as_str() {
             "txt" => {
-                final_prompt.push_str(
-                    format!("Content in the text file {} : \n\
-                     {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== Text File: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
             "md" => {
-                final_prompt.push_str(
-                    format!("Content in the markdown file {} : \n\
-                     {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== Markdown File: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
             "pdf" => {
-                final_prompt.push_str(
-                    format!("Content in the PDF file {} : \n\
-                    {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== PDF File: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
             "docx" => {
-                final_prompt.push_str(
-                    format!("Content in the Word Document file {} : \n\
-                    {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== Word Document: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
             "pptx" => {
-                final_prompt.push_str(
-                    format!("Content in the Power Point slides file {} : \n\
-                    {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== PowerPoint: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
             "xlsx" => {
-                final_prompt.push_str(
-                    format!("Content in the Excel spreadsheets file {} : \n\
-                    {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== Excel Spreadsheet: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
-            "py" | "js" | "ts" | "jsx" | "tsx" | "vue" | "svelte" |     // Web
-            "rs" |                                                      // Rust
-            "go" |                                                      // go
-            "java" | "kt" | "scala" |                                   // java
-            "c" | "cpp" | "cc" | "cxx" | "h" | "hpp" | "hxx" |          // C/C++
-            "cs" | "fs" |                                               // .NET
-            "rb" | "php" | "pl" | "pm" |                                // php
-            "swift" | "m" | "mm" |                                      // Apple
-            "r" | "R" | "jl" |                                          // data science
-            "lua" | "tcl" | "awk" | "sed" |                             // Script
-            "hs" | "ml" | "elm" | "clj" | "cljs" | "ex" | "exs" |       // function
-            "sh" | "bash" | "zsh" | "fish" | "bat" | "cmd" | "ps1" |    // Shell
-            "sql" | "prisma" | "graphql" | "gql" |                      // database
-            "html" | "htm" | "css" | "scss" | "sass" | "less" |         // Web page
-            "xml" | "xsl" | "xslt" |                                    // XML
-            "json" | "yaml" | "yml" | "toml" | "ini" | "cfg" | "conf" | // config
-            "log" | "env" |                                             // log
-            "makefile" | "cmake" | "dockerfile" |                       // build
-            "gitignore" | "editorconfig"                                // git
+            "py" | "js" | "ts" | "jsx" | "tsx" | "vue" | "svelte" |
+            "rs" | "go" | "java" | "kt" | "scala" |
+            "c" | "cpp" | "cc" | "cxx" | "h" | "hpp" | "hxx" |
+            "cs" | "fs" | "rb" | "php" | "pl" | "pm" |
+            "swift" | "m" | "mm" | "r" | "R" | "jl" |
+            "lua" | "tcl" | "awk" | "sed" |
+            "hs" | "ml" | "elm" | "clj" | "cljs" | "ex" | "exs" |
+            "sh" | "bash" | "zsh" | "fish" | "bat" | "cmd" | "ps1" |
+            "sql" | "prisma" | "graphql" | "gql" |
+            "html" | "htm" | "css" | "scss" | "sass" | "less" |
+            "xml" | "xsl" | "xslt" |
+            "json" | "yaml" | "yml" | "toml" | "ini" | "cfg" | "conf" |
+            "log" | "env" | "makefile" | "cmake" | "dockerfile" |
+            "gitignore" | "editorconfig"
             => {
-                final_prompt.push_str(
-                    format!("Content in the {} code file {} : \n\
-                    {}\n", value.extension, value.filename, value.content)
+                file_context.push_str(
+                    format!("=== {} Code File: {} ===\n{}\n\n", 
+                        value.extension.to_uppercase(), value.filename, value.content)
                         .as_str());
             }
-
             _ => {
-                final_prompt.push_str(
-                    format!("Content in {} : {}\n", value.filename, value.content)
+                file_context.push_str(
+                    format!("=== File: {} ===\n{}\n\n", value.filename, value.content)
                         .as_str());
             }
         }
     }
+    
+    file_context.push_str("Please refer to the above file content(s) when answering my questions.");
+    
     cache.clear();
-
-    final_prompt.push_str(
-        format!("User's prompt: {}\n", prompt)
-            .as_str()
-    );
-
-    final_prompt
+    
+    Some(file_context)
 }
 
 
@@ -389,12 +400,8 @@ pub async fn sync_session_handler(
     
     let message_count = messages.len();
     
-    let session = SessionHelper::sync_messages(
-        &state.session_manager,
-        &req.session_id,
-        messages,
-        config,
-    ).await;
+    let session_manager = state.session_manager.read().await;
+    let session = session_manager.get(req.session_id.as_str()).unwrap();
     
     println!("Session {} synced with {} messages", req.session_id, session.messages.len());
     

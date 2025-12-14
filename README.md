@@ -64,8 +64,11 @@ Our team is motivated to build this project because it addresses a real need in 
 
 - Contextual Memory
 
+    - Support contextual memory for user prompt and files
 
 - Session Management
+
+    - Enable user to switch session and delete session
 
 Novelty: While several LLM serving solutions exist in Python, a Rust-native implementation focusing on performance, safety, and ease of use represents a gap in the current ecosystem. Our solution will leverage Rust's strengths to provide better resource utilization and lower latency compared to existing alternatives.
 
@@ -77,15 +80,21 @@ Novelty: While several LLM serving solutions exist in Python, a Rust-native impl
 - Backend
     - Main entrance
     - Http handler layer
-    - File parser layer
-    - Contextual memory and session 
+    - File parser
+    - Session management
+    - Contextual memory 
+    - Unit test
 - Frontend React interface
+- Presentation
 
 ### Wanrou Zhang
+- Software structure design
 - LLM research and selection
 - Backend
     - Http handler layer
-    - LLM manager layer
+    - LLM management
+    - Unit test
+- Presentation and Demo
 - User Guide
 - Reproducibility QA
 
@@ -101,7 +110,10 @@ We thank the MistralRS contributors for providing an efficient Rust-based LLM ru
 
 # Video Slide Presentation
 
-### link
+### Slide link
+https://docs.google.com/presentation/d/1N8ETdvKPDZ93osGocNBkeiM7IdxmCsaoLbP2KXV4Hso/edit?usp=sharing
+
+### Video link
 
 
 # Video Demo
