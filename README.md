@@ -9,30 +9,56 @@
 
 ## Motivation
 
-The recent explosion in large language model (LLM) usage has created
-a growing need for efficient, reliable inference services. While
-Python dominates the ML ecosystem, Rust offers significant advantages
-in performance, memory safety, and concurrency that are particularly
-valuable for serving LLMs. Current Rust solutions in this space are
-either experimental or lack comprehensive feature sets, creating a
-gap between the performance potential of Rust and the practical needs
-of production LLM serving.
+The rapid adoption of large language models (LLMs) in real-world 
+applications has heightened the demand for robust, low-latency inference
+services. While Python-based solutions currently dominate the machine 
+learning ecosystem, they often struggle with the performance overhead, 
+memory inefficiency, and concurrency limitations inherent in dynamic 
+languages—issues that become especially pronounced in production-scale 
+LLM serving.
 
-Our team is motivated to build this project because it addresses a
-real need in the Rust ecosystem while allowing us to work with
-cutting-edge AI technology. The challenge of building a
-high-performance inference service that can handle multiple models
-simultaneously while providing streaming responses is both
-technically satisfying and practically valuable. This project fills
-an important gap by providing a Rust-native solution that can serve
-as a foundation for more complex AI applications.
+Rust presents a compelling alternative, offering exceptional performance,
+memory safety, and fearless concurrency, which align closely with the 
+requirements of high-throughput, low-latency LLM services. However, 
+the current Rust landscape lacks a mature, feature-complete framework 
+for LLM inference that is both production-ready and easy to integrate. 
+Existing Rust implementations remain experimental or offer limited 
+functionality, leaving a clear gap between Rust’s systems-level potential
+and the practical needs of modern AI applications.
+
+Our team is driven by the opportunity to bridge this gap by building a 
+Rust-native LLM inference service that emphasizes efficiency, safety, and
+extensibility. By tackling challenges such as multi-model orchestration, 
+real-time streaming, and context-aware session management—all within a 
+single Rust-based stack—we aim to deliver a solution that not only 
+demonstrates Rust’s suitability for AI infrastructure but also provides 
+a practical, open-source foundation for future AI-driven systems. This 
+project represents a meaningful step toward consolidating performance 
+and safety in LLM deployment, while also offering a technically enriching
+experience in cutting-edge systems programming and AI integration.
 
 
 ## Objective
 
-The recent explosion in large language model (LLM) usage has created a growing need for efficient, reliable inference services. While Python dominates the ML ecosystem, Rust offers significant advantages in performance, memory safety, and concurrency that are particularly valuable for serving LLMs. Current Rust solutions in this space are either experimental or lack comprehensive feature sets, creating a gap between the performance potential of Rust and the practical needs of production LLM serving.
+The objective of this project is to design and implement a high-performance, Rust-native LLM inference service that bridges the gap between Rust’s systems-level capabilities and the practical demands of modern AI applications. By leveraging Rust’s strengths in performance, memory safety, and concurrency, we aim to deliver a production-ready service that supports seamless multi-model orchestration, real-time token streaming, and interactive user sessions—all within a single, efficient runtime.
 
-Our team is motivated to build this project because it addresses a real need in the Rust ecosystem while allowing us to work with cutting-edge AI technology. The challenge of building a high-performance inference service that can handle multiple models simultaneously while providing streaming responses is both technically satisfying and practically valuable. This project fills an important gap by providing a Rust-native solution that can serve as a foundation for more complex AI applications.
+To realize this vision, the project will focus on delivering the following key features:
+
+- Multi-Model Management – Enable simultaneous loading and management of multiple LLMs with support for dynamic model loading, unloading, and hot-swapping, allowing flexible and efficient resource utilization.
+
+- Real-time Streaming Support – Implement server-sent events (SSE) to deliver token-by-token streaming responses, ensuring low-latency interaction for end-users.
+
+- Chat Interface – Provide a web-based UI for intuitive interaction with the inference service, complete with conversation history management.
+
+- File Parsing Support – Integrate asynchronous parsing of text files and code files, with the ability to manage uploaded files dynamically.
+
+- Contextual Memory – Maintain session-aware memory for user prompts and uploaded documents, enabling coherent, context-rich dialogues.
+
+- Session Management – Allow users to create, switch, and delete sessions, supporting isolated conversation contexts and efficient resource cleanup.
+
+This project represents a novel contribution to the Rust ecosystem, where existing LLM serving solutions are either experimental or lack the comprehensive feature set required for practical deployment. By delivering a performant, safe, and extensible foundation for LLM inference, we aim to demonstrate Rust’s viability as a first-class language for AI infrastructure while providing a tangible, open-source tool that can be extended for more complex AI-driven applications.
+
+
 
 ## Key Features:
 
@@ -57,7 +83,7 @@ Our team is motivated to build this project because it addresses a real need in 
 - File Parsing support
 
     - Support parsing text content in docx, pdf and txt file
-
+    - Support parsing code file such as .py, .cpp, .rs, etc.
     - Async parsing for each file uploaded
 
     - Ability to remove any uploaded file
@@ -68,10 +94,11 @@ Our team is motivated to build this project because it addresses a real need in 
 
 - Session Management
 
-    - Enable user to switch session and delete session
+    - Enable user to create, switch session and delete session
 
-Novelty: While several LLM serving solutions exist in Python, a Rust-native implementation focusing on performance, safety, and ease of use represents a gap in the current ecosystem. Our solution will leverage Rust's strengths to provide better resource utilization and lower latency compared to existing alternatives.
+## User's Guide
 
+## Reproducibility Guide
 
 ## Contributions
 
@@ -99,8 +126,7 @@ Novelty: While several LLM serving solutions exist in Python, a Rust-native impl
 - Reproducibility QA
 
 ## Conclusion
-This version of the project integrates an LLM inference service using MistralRS.
-The basic functionality has been implemented and tested.
+This project underscores Rust's compelling advantages as a high-performance, thread-safe, and low-latency language for building AI inference services, offering clear benefits over existing Python-based frameworks and positioning itself as a foundational technology for next-generation AI infrastructure. At the same time, we recognize that Rust remains an evolving ecosystem with a still-maturing set of libraries for AI/ML, highlighting the need for broader community contribution and engagement to expand its capabilities. Throughout development, we also learned that delivering a performant LLM inference service depends on multiple factors—including GPU hardware, model architecture, and model size—requiring thorough upfront research and planning. Importantly, the current Rust landscape still lacks comprehensive support for loading and serving diverse AI models, which necessitated careful evaluation of available crates and a deeper understanding of model structures before implementation. In conclusion, while Rust presents a powerful and safe pathway for efficient AI serving, its full potential will be realized through continued ecosystem development, informed architectural choices, and active community collaboration.
 
 ## References 
 This project uses the open-source MistralRS crate (MIT License):
