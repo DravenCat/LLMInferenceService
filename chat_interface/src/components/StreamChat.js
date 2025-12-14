@@ -372,7 +372,7 @@ const StreamingChat = () => {
   const handleDeleteSession = async (sessionId) => {
     // 调用后端删除会话
     try {
-      await fetch(`http://localhost:8080/session/${sessionId}`, {
+      await fetch(`http://localhost:8080/sessions/${sessionId}`, {
         method: "DELETE",
       });
     } catch (e) {
@@ -466,7 +466,8 @@ const StreamingChat = () => {
               <path strokeLinejoin="round" d="M24 4L28.5 15.5L40 20L28.5 24.5L24 36L19.5 24.5L8 20L19.5 15.5L24 4Z" />
             </svg>
             <p className={styles.emptyTitle}>Start New Chat</p>
-            <p className={styles.emptySubtitle}>Type a message or attach a file to start</p>
+            <p className={styles.emptySubtitle}>Type a message or attach a file to start.</p>
+            <p className={styles.emptySubtitle}>Enter to send. Shift + Enter for new line.</p>
           </div>
         ) : (
           <div className={styles.messagesContainer}>
@@ -525,7 +526,7 @@ const StreamingChat = () => {
                 onClick={handlePlusClick}
                 disabled={isStreaming}
                 className={styles.attachButton}
-                title="Upload File (txt, pdf, docx, pptx)"
+                title="Upload File. Support documents, code files, and more"
               >
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -572,7 +573,7 @@ const StreamingChat = () => {
           </div>
 
           <p className={styles.footerHint}>
-            Enter to send · Shift + Enter for new line · Supports documents, code files, and more
+            AI can make mistakes. Please double-check responses.
           </p>
         </div>
       </footer>

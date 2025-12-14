@@ -79,7 +79,7 @@ const wrapBareLatex = (content) => {
   });
   
   // 处理 \[ ... \] 格式（LaTeX display math）
-  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (match, inner) => {
+  result = result.replace(/\\\[([\s\S]*?)\\]/g, (match, inner) => {
     return `$$${inner.trim()}$$`;
   });
   
@@ -90,7 +90,7 @@ const wrapBareLatex = (content) => {
   
   // 处理方括号格式 [ 5! = 5 \times 4 ] - 包含 LaTeX 命令的
   result = result.replace(
-    /\[\s*([^\[\]]*?\\[a-zA-Z]+[^\[\]]*?)\s*\]/g,
+      /\[\s*([^[\]]*?\\[a-zA-Z]+[^[\]]*?)\s*]/g,
     (match, inner) => `$${inner.trim()}$`
   );
   
