@@ -1,4 +1,5 @@
 import './App.css';
+import "./global.css";
 import StreamingChat from "./components/StreamChat";
 
 function App() {

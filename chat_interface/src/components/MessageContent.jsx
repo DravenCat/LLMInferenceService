@@ -43,39 +43,38 @@ const fixIncompleteMarkdown = (content) => {
   return fixed;
 };
 
-// 将裸露的 LaTeX 表达式包裹在 $ 中
+// 将裸露的 LaTeX 表达式包裹在 $ 中，并修复错误的公式格式
 const wrapBareLatex = (content) => {
   if (!content) return "";
   
   let result = content;
   
-  // 跳过已经在代码块或 $ 中的内容
-  // 先标记这些区域
+  // 先保护代码块
   const codeBlocks = [];
-  const mathBlocks = [];
-  
-  // 提取代码块
   result = result.replace(/```[\s\S]*?```/g, (match) => {
     codeBlocks.push(match);
     return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
   });
-  
-  // 提取行内代码
   result = result.replace(/`[^`]+`/g, (match) => {
     codeBlocks.push(match);
     return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
   });
   
-  // 提取已有的数学公式 $$...$$
-  result = result.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
-    mathBlocks.push(match);
-    return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
+  // 修复错误的 $$ 和 $ 混用情况
+  // 例如: $$5! = $5 \times 4 \times 3 \times 2 \times 1$$$ 
+  // 或者: $$5! = $5 \times...$$$
+  result = result.replace(/\$\$([^$]*)\$([^$]+)\$\$\$/g, (match, before, inner) => {
+    return `$${before}${inner}$`;
   });
   
-  // 提取已有的行内公式 $...$
-  result = result.replace(/\$[^$]+\$/g, (match) => {
-    mathBlocks.push(match);
-    return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
+  // 修复 $$ 开头但没有正确闭合的情况
+  // 例如: $$5! = 5 \times 4$  应该变成 $5! = 5 \times 4$
+  result = result.replace(/\$\$([^$]+)\$(?!\$)/g, (match, inner) => {
+    // 如果内容包含 LaTeX 命令，转为行内公式
+    if (/\\(?:times|cdot|frac|sqrt|div|pm|mp|sum|prod|int)/.test(inner)) {
+      return `$${inner.trim()}$`;
+    }
+    return match;
   });
   
   // 处理 \[ ... \] 格式（LaTeX display math）
@@ -88,36 +87,11 @@ const wrapBareLatex = (content) => {
     return `$${inner.trim()}$`;
   });
   
-  // 处理方括号格式 [ 5! = 5 \times 4 ] - 包含 LaTeX 命令的
+  // 处理方括号格式 [ ... \times ... ] - 包含 LaTeX 命令的
   result = result.replace(
-      /\[\s*([^[\]]*?\\[a-zA-Z]+[^[\]]*?)\s*]/g,
+    /\[\s*([^\[\]]*?\\(?:times|cdot|frac|sqrt|div|pm|mp|sum|prod|int|infty|alpha|beta|gamma|pi)[^\[\]]*?)\s*\]/g,
     (match, inner) => `$${inner.trim()}$`
   );
-  
-  // 处理 \ 5! = 5 \times 4 \times 3 ... \ 格式
-  // 匹配以 \ 开头，包含 \times 等命令，以 \ 结尾的表达式
-  result = result.replace(
-    /\\\s+([^\\]*?(?:\\(?:times|cdot|div|pm|mp|frac|sqrt)[^\\]*?)+)\s*\\/g,
-    (match, inner) => `$${inner.trim()}$`
-  );
-  
-  // 处理包含 \times, \cdot 等的独立数学表达式
-  // 例如: 5 \times 4 \times 3 = 60
-  result = result.replace(
-    /(?<![\\$`])(\d+\s*(?:\\(?:times|cdot|div)\s*\d+\s*)+(?:=\s*\d+)?)/g,
-    (match, inner) => `$${inner.trim()}$`
-  );
-  
-  // 处理类似 n! 的阶乘表达式后跟 = 和 \times
-  result = result.replace(
-    /(?<![\\$`])(\w+!\s*=\s*\d+\s*(?:\\(?:times|cdot)\s*\d+\s*)+(?:=\s*\d+)?)/g,
-    (match, inner) => `$${inner.trim()}$`
-  );
-  
-  // 恢复数学公式
-  mathBlocks.forEach((block, i) => {
-    result = result.replace(`__MATH_BLOCK_${i}__`, block);
-  });
   
   // 恢复代码块
   codeBlocks.forEach((block, i) => {

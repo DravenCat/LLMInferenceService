@@ -4,9 +4,16 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* 动态视口高度，适配移动端 */
   width: 100%;
   background: linear-gradient(to bottom, #1c1917, #0c0a09);
   color: #e7e5e4;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Header */
@@ -15,6 +22,7 @@
   border-bottom: 1px solid rgba(41, 37, 36, 0.5);
   background-color: rgba(28, 25, 23, 0.8);
   backdrop-filter: blur(24px);
+  flex-shrink: 0; /* 防止 header 被压缩 */
 
   .headerContent {
     display: flex;
@@ -56,8 +64,10 @@
 .messagesArea {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.5rem;
-  scroll-behavior: smooth;
+  min-height: 0; /* 关键：允许 flex 子元素收缩 */
+  overscroll-behavior: contain; /* 防止滚动穿透 */
 }
 
 .emptyState {
@@ -354,6 +364,7 @@
   border-top: 1px solid rgba(41, 37, 36, 0.5);
   background-color: rgba(28, 25, 23, 0.9);
   backdrop-filter: blur(24px);
+  flex-shrink: 0; /* 防止 footer 被压缩 */
 
   .footerContent {
     max-width: 48rem;

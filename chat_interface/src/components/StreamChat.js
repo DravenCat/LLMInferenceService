@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import ModelSelector from "./ModelSelector";
 import FileUpload from "./FileUpload";
 import Sidebar from "./Sidebar";
@@ -20,9 +20,11 @@ const StreamingChat = () => {
   const [currentSessionId, setCurrentSessionId] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const messagesAreaRef = useRef(null);
   const textareaRef = useRef(null);
   const fileUploadRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const models = [
     { id: "qwen", name: "QWEN" },
@@ -49,9 +51,28 @@ const StreamingChat = () => {
     }
   }, [sessions]);
 
+  // 滚动到底部的函数
+  const scrollToBottom = useCallback((force = false) => {
+    if (!messagesAreaRef.current) return;
+    
+    if (force || shouldAutoScrollRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  }, []);
+
+  // 检测用户是否滚动离开底部
+  const handleScroll = useCallback(() => {
+    if (!messagesAreaRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    shouldAutoScrollRef.current = isAtBottom;
+  }, []);
+
+  // 消息更新时滚动
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -228,6 +249,10 @@ const StreamingChat = () => {
     setInput("");
     setAttachedFiles([]);
     setIsStreaming(true);
+    
+    // 发送消息时启用自动滚动并立即滚动到底部
+    shouldAutoScrollRef.current = true;
+    setTimeout(() => scrollToBottom(true), 0);
 
     try {
       const requestBody = {
@@ -459,7 +484,11 @@ const StreamingChat = () => {
       </header>
 
       {/* Messages */}
-      <main className={styles.messagesArea}>
+      <main 
+        className={styles.messagesArea} 
+        ref={messagesAreaRef}
+        onScroll={handleScroll}
+      >
         {messages.length === 0 ? (
           <div className={styles.emptyState}>
             <svg className={styles.emptyIcon} fill="none" viewBox="0 0 48 48" stroke="currentColor" strokeWidth="1.5">
