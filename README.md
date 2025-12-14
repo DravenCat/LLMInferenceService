@@ -98,7 +98,158 @@ This project represents a novel contribution to the Rust ecosystem, where existi
 
 ## User's Guide
 
+This guide explains how to set up, run, and use the LLM Inference Service.
+
+This project provides a lightweight LLM inference service implemented in Rust, built on top of:
+- Axum for the web API
+- Tokio for async runtime
+- MistralRS for local LLM inference (GGUF models)
+- (Optional) CUDA acceleration for inference
+
+The service exposes HTTP endpoints for sending user's text prompts and receiving model-generated responses.
+
+### Installation Steps
+
+#### Clone the Repository
+
+    git clone https://github.com/DravenCat/LLMInferenceService.git
+    cd LLMInferenceService
+    
+#### Install Rust
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    rustup default stable
+    
+#### Verify
+
+    rustc --version
+    cargo --version
+    
+### Model Preparation
+
+There is a default lazy model loading process built into the project.
+But you always have the option to download the GGUF model file to your local machine manually. Here are the model types used and their naming:
+
+#### Qwen
+
+Model: Qwen2.5-3B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/Qwen2.5-3B-Instruct-GGUF --include "Qwen2.5-3B-Instruct-Q4_K_M.gguf" --local-dir models/
+
+Name it as:
+
+    Qwen2.5-3B-Instruct-Q4_K_M.gguf
+    
+#### SmoILM2
+
+Model: SmolLM2-1.7B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/SmolLM2-1.7B-Instruct-GGUF --include "*.gguf" --local-dir models/smollm2
+
+Name it as:
+
+    SmolLM2-1.7B-Instruct-Q4_K_M.gguf
+    
+#### llama
+
+Model: Meta-Llama-3.1-8B-Instruct (GGUF)
+
+Example CLI:
+
+    huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --include "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf" --local-dir models/llama8b
+
+Name it as:
+    
+    Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+
+### Build and Run
+The default configuration uses **GPU acceleration** during inference.
+If you want to run the service using **CPU only**, update the dependency configuration in `Cargo.toml` as follows:
+
+    mistralrs = { git = "https://github.com/EricLBuehler/mistral.rs.git" }
+
+Build the project:
+
+    cargo run --release
+
+Then start the server:
+
+    ./target/release/LLMInferenceService
+
+Access the chat interface with the following steps:
+
+Navigate to the ./chat_interface, try to start the chat GUI using the command:
+
+    npm start
+
+In case it does not work, try 
+
+    npm install 
+
+first. And then try to start the chat GUI again.
+
+If the chat GUI is loaded successfully, you can see a webpage like this open:
+<img width="1000" height="600" alt="image" src="https://github.com/user-attachments/assets/b96988f6-eeaa-4569-8155-effe6bcae9d8" />
+
+✨💬You can now start interacting with the LLM inference service!!🤖✨ Have fun !!
+
 ## Reproducibility Guide
+
+The project builds successfully from a clean state using `cargo build --release`.
+
+The server runs correctly using `./target/release/LLMInferenceService`.
+
+The chat GUI was successfully installed and launched using `npm install` followed by `npm start`.
+
+### crates/libs required
+
+The project is implemented in Rust and depends on the following key crates:
+
+- axum — HTTP web framework for serving inference requests
+
+- tokio — asynchronous runtime
+
+- tower-http — CORS, tracing, and compression middleware
+
+- serde / serde_json — request and response serialization
+
+- mistralrs — LLM inference runtime (GGUF support, optional CUDA acceleration)
+
+- anyhow — error handling
+
+- reqwest — HTTP client utilities
+
+All dependencies are fully specified in .toml file.
+
+To ensure reproducibility, it is recommended to build the project using the exact dependency versions defined there.
+
+### Systems used to test our project
+Windows 11 (PowerShell)
+
+- OS: 
+
+- Shell:
+
+- Rust Toolchain:
+
+Windows 11 with WSL (Ubuntu)
+
+- Host OS: Windows 11
+
+- Subsystem: WSL2
+
+- Guest OS: Ubuntu 22.04
+
+- Rust Toolchain: stable-x86_64-unknown-linux-gnu (default)
+
+Optional GPU support: CUDA via WSL (NVIDIA driver required)
+
+### Configuration Control
+- Execution environment (CPU vs. GPU) is controlled via `.toml` feature flags, see User's Guide - Build and Run section for details.
 
 ## Contributions
 
