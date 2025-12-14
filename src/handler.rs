@@ -11,7 +11,6 @@ use std::{time::Duration};
 use std::path::Path;
 use axum::routing::delete;
 use reqwest::StatusCode;
-use tower_http::follow_redirect::policy::PolicyExt;
 use crate::AppState;
 use crate::error::{RemoveFileError, RemoveSessionError, UnsupportedFileError};
 use crate::file_parser::{parse_file, CacheFile};
@@ -388,9 +387,7 @@ pub async fn sync_session_handler(
     State(state): State<AppState>,
     Json(req): Json<SyncSessionRequest>
 ) -> Json<SyncSessionResponse> {
-    let config = SessionConfig::default();
-    
-    // 过滤掉前端消息中可能存在的文件信息，只保留 role 和 content
+
     let messages: Vec<ChatMessage> = req.messages.into_iter().map(|msg| {
         ChatMessage {
             role: msg.role,

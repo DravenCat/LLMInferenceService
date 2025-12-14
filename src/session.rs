@@ -153,7 +153,7 @@ impl SessionHelper {
     }
 
     /// 同步 session 消息（从前端恢复历史）
-    pub async fn sync_messages(
+    pub async fn _sync_messages(
         manager: &SessionManager,
         session_id: &str,
         messages: Vec<ChatMessage>,
