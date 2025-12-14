@@ -170,7 +170,7 @@ Then start the server:
 
 Access the chat interface with the following steps:
 
-Go to the ./chat_interface in Ubuntu(WSL on Windows) / in Linux, try to start the chat GUI using the command:
+Navigate to the ./chat_interface, try to start the chat GUI using the command:
 
     npm start
 
@@ -205,16 +205,18 @@ The project is implemented in Rust and depends on the following key crates:
 
 - reqwest — HTTP client utilities
 
-All dependencies are fully specified in Cargo.toml.
+All dependencies are fully specified in .toml file.
 
 To ensure reproducibility, it is recommended to build the project using the exact dependency versions defined there.
 
 ### Systems used to test our project
 - Windows 11 (PowerShell)
 
-OS: Windows 11 (x64)
+OS: 
 
-Shell: PowerShell
+Shell:
+
+Rust Toolchain:
 
 - Windows 11 with WSL (Ubuntu)
 
@@ -223,6 +225,8 @@ Host OS: Windows 11
 Subsystem: WSL2
 
 Guest OS: Ubuntu 22.04
+
+Rust Toolchain: stable-x86_64-unknown-linux-gnu (default)
 
 Optional GPU support: CUDA via WSL (NVIDIA driver required)
   
