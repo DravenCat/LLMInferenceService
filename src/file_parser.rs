@@ -396,12 +396,33 @@ mod tests {
 
     #[test]
     fn test_file_type_detection() {
+        // text file
         assert_eq!(FileType::from_extension("txt"), Some(FileType::TXT));
         assert_eq!(FileType::from_extension("PDF"), Some(FileType::PDF));
         assert_eq!(FileType::from_extension("docx"), Some(FileType::DOCX));
         assert_eq!(FileType::from_extension("PPTX"), Some(FileType::PPTX));
+        assert_eq!(FileType::from_extension("xlsx"), Some(FileType::XLSX));
         assert_eq!(FileType::from_extension("XLSX"), Some(FileType::XLSX));
+        assert_eq!(FileType::from_extension("md"), Some(FileType::MD));
+
+        // code
+        assert_eq!(FileType::from_extension("py"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("js"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("rs"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("java"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("cpp"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("go"), Some(FileType::CODE));
+
+        // config file
+        assert_eq!(FileType::from_extension("json"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("yaml"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("toml"), Some(FileType::CODE));
+        assert_eq!(FileType::from_extension("xml"), Some(FileType::CODE));
+
+        // Unsupported file
         assert_eq!(FileType::from_extension("jpg"), None);
+        assert_eq!(FileType::from_extension("mp4"), None);
+        assert_eq!(FileType::from_extension("zip"), None);
     }
 
     #[test]
@@ -413,5 +434,76 @@ mod tests {
         assert_eq!(cell_to_string(&Data::Float(100.0)), "100");
         assert_eq!(cell_to_string(&Data::Bool(true)), "TRUE");
         assert_eq!(cell_to_string(&Data::Bool(false)), "FALSE");
+    }
+
+    #[test]
+    fn test_strip_markdown_headings() {
+        // 测试标题
+        assert_eq!(strip_markdown("# Heading 1"), "Heading 1\n");
+        assert_eq!(strip_markdown("## Heading 2"), "Heading 2\n");
+        assert_eq!(strip_markdown("### Heading 3"), "Heading 3\n");
+    }
+
+    #[test]
+    fn test_strip_markdown_emphasis() {
+        assert_eq!(strip_markdown("**bold**"), "bold\n");
+        assert_eq!(strip_markdown("*italic*"), "italic\n");
+        assert_eq!(strip_markdown("__bold__"), "bold\n");
+        assert_eq!(strip_markdown("_italic_"), "italic\n");
+        assert_eq!(strip_markdown("***bold italic***"), "bold italic\n");
+    }
+
+    #[test]
+    fn test_strip_markdown_lists() {
+        assert_eq!(strip_markdown("- item 1"), "item 1\n");
+        assert_eq!(strip_markdown("*item 2"), "item 2\n");
+
+        assert_eq!(strip_markdown("1. first"), "first\n");
+        assert_eq!(strip_markdown("2. second"), "second\n");
+        assert_eq!(strip_markdown("10. tenth"), "tenth\n");
+    }
+
+    #[test]
+    fn test_strip_markdown_images() {
+        assert_eq!(strip_markdown("![alt text](image.png)"), "");
+        assert_eq!(strip_markdown("![](image.jpg)"), "");
+        assert_eq!(strip_markdown("Text before\n![image](url)\nText after"), "Text before\nText after\n");
+    }
+
+    #[test]
+    fn test_strip_markdown_mixed() {
+        let input = r#"# Welcome
+
+This is **bold** and *italic* text.
+
+- Item 1
+- Item 2
+
+![image](test.png)
+
+1. First
+2. Second"#;
+
+        let expected = r#"Welcome
+This is bold and italic text.
+Item 1
+Item 2
+First
+Second
+"#;
+        assert_eq!(strip_markdown(input), expected);
+    }
+
+    #[test]
+    fn test_strip_markdown_empty_lines() {
+        assert_eq!(strip_markdown(""), "");
+        assert_eq!(strip_markdown("   "), "");
+        assert_eq!(strip_markdown("\n\n\n"), "");
+    }
+
+    #[test]
+    fn test_strip_markdown_plain_text() {
+        assert_eq!(strip_markdown("Hello World"), "Hello World\n");
+        assert_eq!(strip_markdown("Line 1\nLine 2"), "Line 1\nLine 2\n");
     }
 }
