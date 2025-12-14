@@ -210,23 +210,23 @@ All dependencies are fully specified in .toml file.
 To ensure reproducibility, it is recommended to build the project using the exact dependency versions defined there.
 
 ### Systems used to test our project
-- Windows 11 (PowerShell)
+Windows 11 (PowerShell)
 
-OS: 
+- OS: 
 
-Shell:
+- Shell:
 
-Rust Toolchain:
+- Rust Toolchain:
 
-- Windows 11 with WSL (Ubuntu)
+Windows 11 with WSL (Ubuntu)
 
-Host OS: Windows 11
+- Host OS: Windows 11
 
-Subsystem: WSL2
+- Subsystem: WSL2
 
-Guest OS: Ubuntu 22.04
+- Guest OS: Ubuntu 22.04
 
-Rust Toolchain: stable-x86_64-unknown-linux-gnu (default)
+- Rust Toolchain: stable-x86_64-unknown-linux-gnu (default)
 
 Optional GPU support: CUDA via WSL (NVIDIA driver required)
   
