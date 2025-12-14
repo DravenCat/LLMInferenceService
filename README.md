@@ -189,9 +189,42 @@ If the chat GUI is loaded successfully, you can see a webpage like this open:
 
 ### crates/libs required
 
+The project is implemented in Rust and depends on the following key crates:
+
+- axum — HTTP web framework for serving inference requests
+
+- tokio — asynchronous runtime
+
+- tower-http — CORS, tracing, and compression middleware
+
+- serde / serde_json — request and response serialization
+
+- mistralrs — LLM inference runtime (GGUF support, optional CUDA acceleration)
+
+- anyhow — error handling
+
+- reqwest — HTTP client utilities
+
+All dependencies are fully specified in Cargo.toml.
+
+To ensure reproducibility, it is recommended to build the project using the exact dependency versions defined there.
+
 ### Systems used to test our project
-- Powershell-windows
-- WSL on Windows 11
+- Windows 11 (PowerShell)
+
+OS: Windows 11 (x64)
+
+Shell: PowerShell
+
+- Windows 11 with WSL (Ubuntu)
+
+Host OS: Windows 11
+
+Subsystem: WSL2
+
+Guest OS: Ubuntu 22.04
+
+Optional GPU support: CUDA via WSL (NVIDIA driver required)
   
 ## Contributions
 
