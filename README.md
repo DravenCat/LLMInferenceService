@@ -101,7 +101,7 @@ This project provides a lightweight LLM inference service implemented in Rust, b
 - Axum for the web API
 - Tokio for async runtime
 - MistralRS for local LLM inference (GGUF models)
-- (Optional) CUDA acceleration for GPU inference
+- (Optional) CUDA acceleration for inference
 
 The service exposes HTTP endpoints for sending user's text prompts and receiving model-generated responses.
 
@@ -187,6 +187,12 @@ If the chat GUI is loaded successfully, you can see a webpage like this open:
 
 ## Reproducibility Guide
 
+The project builds successfully from a clean state using `cargo build --release`.
+
+The server runs correctly using `./target/release/LLMInferenceService`.
+
+The chat GUI was successfully installed and launched using `npm install` followed by `npm start`.
+
 ### crates/libs required
 
 The project is implemented in Rust and depends on the following key crates:
@@ -229,6 +235,9 @@ Windows 11 with WSL (Ubuntu)
 - Rust Toolchain: stable-x86_64-unknown-linux-gnu (default)
 
 Optional GPU support: CUDA via WSL (NVIDIA driver required)
+
+### Configuration Control
+- Execution environment (CPU vs. GPU) is controlled via `.toml` feature flags, see User's Guide - Build and Run section for details 
   
 ## Contributions
 
