@@ -269,7 +269,9 @@ This project underscores Rust's compelling advantages as a high-performance, thr
 
 ## References 
 This project uses the open-source MistralRS crate (MIT License):
+
  -- MistralRS GitHub: https://github.com/EricLBuehler/mistral.rs
+ 
 We thank the MistralRS contributors for providing an efficient Rust-based LLM runtime.
 
 
