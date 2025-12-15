@@ -218,11 +218,11 @@ To ensure reproducibility, it is recommended to build the project using the exac
 ### Systems used to test our project
 Windows 11 (PowerShell)
 
-- OS: 
+- OS: Windows 11
 
-- Shell:
+- Shell: PowerShell
 
-- Rust Toolchain:
+- Rust Toolchain: x86_64-pc-windows-msvc (default)
 
 Windows 11 with WSL (Ubuntu)
 
