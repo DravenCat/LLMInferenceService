@@ -281,7 +281,7 @@ We thank the MistralRS contributors for providing an efficient Rust-based LLM ru
 https://docs.google.com/presentation/d/1N8ETdvKPDZ93osGocNBkeiM7IdxmCsaoLbP2KXV4Hso/edit?usp=sharing
 
 ### Video link
-
+https://drive.google.com/file/d/179m1gopunKvfkx1pvzc7pp78BqpV3rwB/view?usp=drive_link
 
 # Video Demo
 
