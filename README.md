@@ -5,7 +5,7 @@
 - Wanrou Zhang 1011562694
 
 ### Team contact email
-
+zlynn798@gmail.com 
 
 ## Motivation
 
